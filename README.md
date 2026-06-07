@@ -10,13 +10,17 @@
 
 | Phase | Scope | Status |
 |-------|-------|--------|
+| **P0** | Spec + conformance vectors | Complete |
 | **P1** | Deterministic core + offline verifier | Complete |
 | **P2** | Kafka → Iceberg via SPI + E2E fault tests | Complete |
-| **P3** | CLI, benchmarks, demo | Complete |
-| P4 | Paper, standardization | Planned |
+| **P3** | CLI, metrics, `--check`, demo | Complete |
+| **P4** | Publishing + cloud connectors | Not started — [roadmap](docs/developer/ROADMAP.md) |
+| **P5** | Connector breadth + advanced features | Not started — [roadmap](docs/developer/ROADMAP.md) |
 
 ## Quick links
 
+- [Project status](docs/developer/PROJECT-STATUS.md) — verified vs CI-only vs outstanding
+- [P4/P5 roadmap](docs/developer/ROADMAP.md) — cloud, KMS, SQL pushdown, publishing
 - [Developer testing guide](docs/developer/TESTING.md) — run tests, 100% coverage, tutorials
 - [Coverage checklist](docs/developer/COVERAGE-CHECKLIST.md) — per-module 100% line targets
 - [VRP v0.1 specification](docs/spec/VRP-v0.1.md) — normative proof format and verify algorithm

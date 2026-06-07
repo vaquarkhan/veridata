@@ -2,7 +2,9 @@
 
 | Guide | Description |
 |-------|-------------|
-| [TESTING.md](TESTING.md) | **Start here** — run tests, CI gates, 100% coverage, tutorials |
+| [PROJECT-STATUS.md](PROJECT-STATUS.md) | **Start here** — verified vs CI-only vs outstanding work |
+| [ROADMAP.md](ROADMAP.md) | P4/P5 — cloud connectors, KMS SDKs, pushdown, publishing |
+| [TESTING.md](TESTING.md) | Run tests, CI gates, 100% coverage, Windows linker notes |
 | [COVERAGE-CHECKLIST.md](COVERAGE-CHECKLIST.md) | Per-module 100% coverage checklist |
 | [../connectors/README.md](../connectors/README.md) | Kafka → Iceberg SPI connectors |
 | [../spec/VRP-v0.1.md](../spec/VRP-v0.1.md) | Normative VRP format |
@@ -23,5 +25,9 @@ powershell -File scripts/install-git-hooks.ps1   # Windows
 ## One-liner for new contributors
 
 ```bash
+# No Rust linker? P0 only:
+python conformance/validate_p0.py
+
+# Full gates (or use GitHub Actions CI on Ubuntu):
 cargo test --workspace && python conformance/validate_p0.py && ./scripts/run-coverage.sh
 ```

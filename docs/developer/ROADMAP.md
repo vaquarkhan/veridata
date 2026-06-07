@@ -1,6 +1,6 @@
 # Roadmap — not yet implemented
 
-P0–P3 in-repo bugs and acceptance gaps are addressed on `main` (commit `6aea27a` and prior).
+P0–P3 in-repo bugs and acceptance gaps are addressed on `main`.
 The items below are **outstanding** and require new connectors, SDK integrations, or release infrastructure.
 
 ## P4 — distribution and adoption
@@ -14,7 +14,7 @@ The items below are **outstanding** and require new connectors, SDK integrations
 
 ## Cloud connectors (design only today)
 
-No `s3`, `gcs`, `azure`, or `kms` SDK usage exists in source. Only in-memory Kafka + filesystem Iceberg are implemented.
+No `s3`, `gcs`, `azure`, or cloud `kms` SDK usage exists in source. Only in-memory Kafka + filesystem Iceberg are implemented.
 
 | Target | Source | Sink | Proof store | Signing |
 |--------|--------|------|-------------|---------|
@@ -27,7 +27,7 @@ No `s3`, `gcs`, `azure`, or `kms` SDK usage exists in source. Only in-memory Kaf
 
 ## Real KMS SDKs (AC-C7 production)
 
-Current implementation: **file-backed** `FileKmsSigner` and `PubkeyDirectory` for local/on-prem stand-in.
+Current implementation on `main`: **file-backed** `FileKmsSigner` and `PubkeyDirectory` for local/on-prem stand-in.
 
 Still needed:
 
