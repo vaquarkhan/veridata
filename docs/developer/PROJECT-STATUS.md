@@ -1,6 +1,6 @@
 # Project status — verified vs outstanding
 
-Last updated for `main` after P0–P3 bug fixes (`6aea27a` and prior).
+Last updated for `main` (P0–P3 complete; positioning aligned in `docs/POSITIONING.md`).
 
 ## Net assessment
 

@@ -6,19 +6,22 @@
 
 > The guarantee is **verifiable reconciliation** with dup/drop/mutation detection and third-party-verifiable proof over a boundary — not "exactly-once for everything."
 
+**Adoption model:** enterprise depth (critical pipelines, auditors, regulators) — not consumer virality. See [Positioning](docs/POSITIONING.md) for an honest **what we ship vs what we do not claim** (cloud production, auto-remediation, DLQ/replay).
+
 ## Status
 
 | Phase | Scope | Status |
 |-------|-------|--------|
 | **P0** | Spec + conformance vectors | Complete |
 | **P1** | Deterministic core + offline verifier | Complete |
-| **P2** | Kafka → Iceberg via SPI + E2E fault tests | Complete |
+| **P2** | Kafka → Iceberg via SPI + E2E (demo backends) | Complete |
 | **P3** | CLI, metrics, `--check`, demo | Complete |
 | **P4** | Publishing + cloud connectors | Not started — [roadmap](docs/developer/ROADMAP.md) |
 | **P5** | Connector breadth + advanced features | Not started — [roadmap](docs/developer/ROADMAP.md) |
 
 ## Quick links
 
+- [Positioning](docs/POSITIONING.md) — enterprise narrative; claims we do **not** make yet
 - [Project status](docs/developer/PROJECT-STATUS.md) — verified vs CI-only vs outstanding
 - [P4/P5 roadmap](docs/developer/ROADMAP.md) — cloud, KMS, SQL pushdown, publishing
 - [Developer testing guide](docs/developer/TESTING.md) — run tests, 100% coverage, tutorials
@@ -39,6 +42,12 @@ Given a **boundary** (offset range, time window, or batch id), a VRP commits to:
 5. **Signature** — Ed25519 over canonical document bytes
 
 Proofs contain **only salted hashes** — never raw field values or identities.
+
+## What we do not ship (v0.1)
+
+- Automated **remediation**, **DLQ routing**, or **idempotent replay** (detect + prove only)
+- Production **cloud** connectors (MSK, S3, BigQuery, Databricks, etc.)
+- Inline “zero-trust” gate in your pipeline — you call reconcile/verify; we provide the proof and verifier
 
 ## Quick start (CLI)
 

@@ -2,7 +2,8 @@
 
 | Guide | Description |
 |-------|-------------|
-| [PROJECT-STATUS.md](PROJECT-STATUS.md) | **Start here** — verified vs CI-only vs outstanding work |
+| [../POSITIONING.md](../POSITIONING.md) | Enterprise narrative — honest claims vs oversell |
+| [PROJECT-STATUS.md](PROJECT-STATUS.md) | Verified vs CI-only vs outstanding work |
 | [ROADMAP.md](ROADMAP.md) | P4/P5 — cloud connectors, KMS SDKs, pushdown, publishing |
 | [TESTING.md](TESTING.md) | Run tests, CI gates, 100% coverage, Windows linker notes |
 | [COVERAGE-CHECKLIST.md](COVERAGE-CHECKLIST.md) | Per-module 100% coverage checklist |

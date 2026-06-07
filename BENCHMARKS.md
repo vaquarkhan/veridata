@@ -31,7 +31,7 @@ powershell -File scripts/bench-demo.ps1
 |---------|------------------------|
 | < 10k | Canonicalization + hashing |
 | 10k–1M | Merkle build + JSON proof size |
-| > 1M | Use Iceberg pushdown (`PushdownMode::Pushdown`) — hash in connector, not client |
+| > 1M | Needs **warehouse SQL pushdown** (roadmap) — v0.1 filesystem Iceberg uses Parquet column projection only |
 
 Future P3+ work: Criterion benches in `core/benches/` and `proof/benches/` for micro-benchmarks of canon, Merkle, and verify.
 

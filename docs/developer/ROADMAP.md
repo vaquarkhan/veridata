@@ -46,6 +46,20 @@ Still needed:
 - Snowflake / Databricks: Spark SQL hashing pushdown
 - Honest `pushdown_used` only when hashing runs in the warehouse engine
 
+## Pipeline integration (not built — common oversell)
+
+These are **not** on `main`. Veridata v0.1 **detects and proves** faults; it does not operate the pipeline after a FAIL.
+
+| Integration | Status | Notes |
+|-------------|--------|-------|
+| Inline verification gate before promote | DIY | Call `veridata verify --check` in CI/CD |
+| Dead Letter Queue (DLQ) routing | Not done | Route missing/mutated evidence to your DLQ topic |
+| Idempotent replay / backfill | Not done | Orchestrator (Airflow, Flink, custom) |
+| Auto-remediation agent | Not done | Distinct from AIOps/IaC products |
+| Proof store on S3/GCS/ADLS | Not done | Local filesystem today |
+
+See [POSITIONING.md](../POSITIONING.md) for accurate enterprise messaging.
+
 ## P5 — breadth (post-1.0)
 
 Per `CURSOR-BUILD-SPEC.md` phase P5; not started:
