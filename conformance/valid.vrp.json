@@ -1,0 +1,61 @@
+{
+  "vrp_version": "0.1",
+  "proof_id": "529d1052c62e9f89ead4a0c2efa8663cbd3b75da47850f2cb9a2bd6644164782",
+  "created_at": "2026-06-07T00:00:00Z",
+  "producer": "veridata/0.1.0-p0",
+  "boundary": {
+    "mode": "OFFSET_RANGE",
+    "value": "eyJwYXJ0aXRpb25zIjpbeyJlbmQiOjk5LCJpZCI6MCwic3RhcnQiOjB9XX0="
+  },
+  "source_ref": "kafka:orders",
+  "sink_ref": "iceberg:warehouse.orders",
+  "hash_algorithm": "sha256",
+  "canon_version": 1,
+  "salt": "q6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6s=",
+  "source_commitment": {
+    "count": 5,
+    "merkle_root": "d2cdb0e66056a633d01613a6fc551ed8340da23b6ddf3a8afe166dfdddd62bfe"
+  },
+  "sink_commitment": {
+    "count": 5,
+    "merkle_root": "d2cdb0e66056a633d01613a6fc551ed8340da23b6ddf3a8afe166dfdddd62bfe"
+  },
+  "reconciliation": {
+    "matched": {
+      "count": 5,
+      "merkle_root": "d2cdb0e66056a633d01613a6fc551ed8340da23b6ddf3a8afe166dfdddd62bfe"
+    },
+    "missing": [],
+    "duplicated": [],
+    "mutated": [],
+    "verdict": "PASS",
+    "unverified_reason": null
+  },
+  "policy": {
+    "identity_rule": "composite:[order_id,line_id]",
+    "canon": {
+      "version": 1,
+      "timestamp_precision": "micros",
+      "decimal_scale": 6,
+      "unicode": "NFC",
+      "null_token": "\u0000",
+      "field_order": "lexicographic",
+      "array_as_set": false
+    },
+    "hash_algorithm": "sha256",
+    "tolerances": {
+      "max_drops": 0,
+      "duplicates": "FORBID",
+      "max_mutations": 0
+    },
+    "late_arrival_window": "900s"
+  },
+  "chain": {
+    "prev_proof_hash": null
+  },
+  "signature": {
+    "alg": "ed25519",
+    "public_key": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+    "sig": "MN+T0zGK1su7+1IMZZxkkRgnqr+GP9HZsb7Me4sa7yzRdUjhLkcTZ5UzlMZ/JtJ9elqcC0ly9IgWG002grxuAQ=="
+  }
+}

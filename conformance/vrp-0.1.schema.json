@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veridata.dev/schemas/vrp-0.1.json",
+  "title": "Verifiable Reconciliation Proof v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vrp_version",
+    "proof_id",
+    "created_at",
+    "producer",
+    "boundary",
+    "source_ref",
+    "sink_ref",
+    "hash_algorithm",
+    "canon_version",
+    "salt",
+    "source_commitment",
+    "sink_commitment",
+    "reconciliation",
+    "policy",
+    "chain",
+    "signature"
+  ],
+  "properties": {
+    "vrp_version": { "type": "string", "const": "0.1" },
+    "proof_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "producer": { "type": "string", "minLength": 1 },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "value"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["OFFSET_RANGE", "TIME_WINDOW", "BATCH_ID"]
+        },
+        "value": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source_ref": { "type": "string", "minLength": 1 },
+    "sink_ref": { "type": "string", "minLength": 1 },
+    "hash_algorithm": { "type": "string", "enum": ["sha256", "blake3"] },
+    "canon_version": { "type": "integer", "const": 1 },
+    "salt": { "type": "string", "minLength": 1 },
+    "source_commitment": { "$ref": "#/$defs/commitment" },
+    "sink_commitment": { "$ref": "#/$defs/commitment" },
+    "reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matched",
+        "missing",
+        "duplicated",
+        "mutated",
+        "verdict",
+        "unverified_reason"
+      ],
+      "properties": {
+        "matched": { "$ref": "#/$defs/commitment" },
+        "missing": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/missing_entry" }
+        },
+        "duplicated": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/duplicated_entry" }
+        },
+        "mutated": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mutated_entry" }
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "UNVERIFIED"]
+        },
+        "unverified_reason": {
+          "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1 }]
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity_rule",
+        "canon",
+        "hash_algorithm",
+        "tolerances",
+        "late_arrival_window"
+      ],
+      "properties": {
+        "identity_rule": { "type": "string", "minLength": 1 },
+        "canon": { "$ref": "#/$defs/canon_spec" },
+        "hash_algorithm": { "type": "string", "enum": ["sha256", "blake3"] },
+        "tolerances": { "$ref": "#/$defs/tolerances" },
+        "late_arrival_window": { "type": "string", "minLength": 1 }
+      }
+    },
+    "chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prev_proof_hash"],
+      "properties": {
+        "prev_proof_hash": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          ]
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "public_key", "sig"],
+      "properties": {
+        "alg": { "type": "string", "const": "ed25519" },
+        "public_key": { "type": "string", "minLength": 1 },
+        "sig": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "commitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "merkle_root"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "merkle_root": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "missing_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id_hash", "source_pos", "inclusion_proof"],
+      "properties": {
+        "id_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "source_pos": { "type": "string", "minLength": 1 },
+        "inclusion_proof": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "duplicated_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id_hash", "source_multiplicity", "sink_multiplicity"],
+      "properties": {
+        "id_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "source_multiplicity": { "type": "integer", "minimum": 0 },
+        "sink_multiplicity": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "mutated_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id_hash", "source_content_hash", "sink_content_hash"],
+      "properties": {
+        "id_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "source_content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "sink_content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "canon_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "timestamp_precision",
+        "decimal_scale",
+        "unicode",
+        "null_token",
+        "field_order",
+        "array_as_set"
+      ],
+      "properties": {
+        "version": { "type": "integer", "const": 1 },
+        "timestamp_precision": { "type": "string", "enum": ["micros"] },
+        "decimal_scale": { "type": "integer", "minimum": 0 },
+        "unicode": { "type": "string", "const": "NFC" },
+        "null_token": { "type": "string" },
+        "field_order": { "type": "string", "const": "lexicographic" },
+        "array_as_set": { "type": "boolean" }
+      }
+    },
+    "tolerances": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_drops", "duplicates", "max_mutations"],
+      "properties": {
+        "max_drops": { "type": "integer", "minimum": 0 },
+        "duplicates": {
+          "type": "string",
+          "enum": ["FORBID", "ALLOW_IF_SINK_IDEMPOTENT"]
+        },
+        "max_mutations": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

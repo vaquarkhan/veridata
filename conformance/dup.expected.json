@@ -1,0 +1,6 @@
+{
+  "verify_outcome": "FAIL",
+  "verdict": "FAIL",
+  "duplicated_count": 1,
+  "description": "Sink contains duplicate of line_id record"
+}

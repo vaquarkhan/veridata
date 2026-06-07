@@ -1,0 +1,6 @@
+{
+  "verify_outcome": "FAIL",
+  "verdict": "FAIL",
+  "missing_count": 1,
+  "description": "One source record absent from sink"
+}

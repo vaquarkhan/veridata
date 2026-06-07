@@ -1,0 +1,5 @@
+{
+  "verify_outcome": "PASS",
+  "verdict": "PASS",
+  "description": "Identical source and sink multisets"
+}

@@ -1,0 +1,67 @@
+{
+  "vrp_version": "0.1",
+  "proof_id": "497a6b53736f2190d9bb37ac99d6c0c8575acdcb36dfc6904fdb0b2313f6c7f9",
+  "created_at": "2026-06-07T00:00:00Z",
+  "producer": "veridata/0.1.0-p0",
+  "boundary": {
+    "mode": "OFFSET_RANGE",
+    "value": "eyJwYXJ0aXRpb25zIjpbeyJlbmQiOjk5LCJpZCI6MCwic3RhcnQiOjB9XX0="
+  },
+  "source_ref": "kafka:orders",
+  "sink_ref": "iceberg:warehouse.orders",
+  "hash_algorithm": "sha256",
+  "canon_version": 1,
+  "salt": "q6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6s=",
+  "source_commitment": {
+    "count": 5,
+    "merkle_root": "d2cdb0e66056a633d01613a6fc551ed8340da23b6ddf3a8afe166dfdddd62bfe"
+  },
+  "sink_commitment": {
+    "count": 5,
+    "merkle_root": "c7a474a19569eed42c9f3b7c924dd3659249dd0eb3adbcee20268909995f962e"
+  },
+  "reconciliation": {
+    "matched": {
+      "count": 4,
+      "merkle_root": "a4f45cb97fd2a8de758c88e4d701302d9f3526daef8424df5540f6878821a205"
+    },
+    "missing": [],
+    "duplicated": [],
+    "mutated": [
+      {
+        "id_hash": "afb016ecd647021b200045bb5d9e511b128b43c0a2c72106e65db98925fcc826",
+        "source_content_hash": "5cdaf6f8167d14c9edff55fbc181d29b351e5e90e6eaa1b80c2422f575f509b5",
+        "sink_content_hash": "0cf3f90b08937632a57f6572cbe0ef46e77fd2d7d8a8bdd08f7b5f09f50f62cf"
+      }
+    ],
+    "verdict": "FAIL",
+    "unverified_reason": null
+  },
+  "policy": {
+    "identity_rule": "composite:[order_id,line_id]",
+    "canon": {
+      "version": 1,
+      "timestamp_precision": "micros",
+      "decimal_scale": 6,
+      "unicode": "NFC",
+      "null_token": "\u0000",
+      "field_order": "lexicographic",
+      "array_as_set": false
+    },
+    "hash_algorithm": "sha256",
+    "tolerances": {
+      "max_drops": 0,
+      "duplicates": "FORBID",
+      "max_mutations": 0
+    },
+    "late_arrival_window": "900s"
+  },
+  "chain": {
+    "prev_proof_hash": null
+  },
+  "signature": {
+    "alg": "ed25519",
+    "public_key": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+    "sig": "rPeVJu2mZs/72+VyAU6VS7aA9a/2zxhDE8TAwzdnCk0QJbBzLkrsgLO0UtWRHd4/cEuaXwUTJQS1dRIboHawDw=="
+  }
+}

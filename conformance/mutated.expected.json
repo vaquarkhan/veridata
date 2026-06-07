@@ -1,0 +1,6 @@
+{
+  "verify_outcome": "FAIL",
+  "verdict": "FAIL",
+  "mutated_count": 1,
+  "description": "Same identity, different business field in sink"
+}

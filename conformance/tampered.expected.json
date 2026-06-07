@@ -1,0 +1,5 @@
+{
+  "verify_outcome": "FAIL",
+  "fail_reason": "bad signature",
+  "description": "Valid proof with corrupted signature bytes"
+}

@@ -1,0 +1,71 @@
+{
+  "vrp_version": "0.1",
+  "proof_id": "a5d12e1b060cf8c6ef4273213bf2a60693e6f50375a652046632e4e569e0ded5",
+  "created_at": "2026-06-07T00:00:00Z",
+  "producer": "veridata/0.1.0-p0",
+  "boundary": {
+    "mode": "OFFSET_RANGE",
+    "value": "eyJwYXJ0aXRpb25zIjpbeyJlbmQiOjk5LCJpZCI6MCwic3RhcnQiOjB9XX0="
+  },
+  "source_ref": "kafka:orders",
+  "sink_ref": "iceberg:warehouse.orders",
+  "hash_algorithm": "sha256",
+  "canon_version": 1,
+  "salt": "q6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6s=",
+  "source_commitment": {
+    "count": 5,
+    "merkle_root": "d2cdb0e66056a633d01613a6fc551ed8340da23b6ddf3a8afe166dfdddd62bfe"
+  },
+  "sink_commitment": {
+    "count": 4,
+    "merkle_root": "9dad061dd6b1dcd73a5a08c0d010fbc96ab35ffb211ecec0c7b22077975a49fa"
+  },
+  "reconciliation": {
+    "matched": {
+      "count": 4,
+      "merkle_root": "9dad061dd6b1dcd73a5a08c0d010fbc96ab35ffb211ecec0c7b22077975a49fa"
+    },
+    "missing": [
+      {
+        "id_hash": "06505a3d80fc20c052cc377f3e1c5cdbef72761358d1d94dbce59b7ac0166dde",
+        "source_pos": "eyJraW5kIjogIktBRktBX09GRlNFVCIsICJ2YWx1ZSI6ICIwMDAwMDAwMDAwMDAwMDA0In0=",
+        "inclusion_proof": [
+          "61273369e74fd192653e92b6d922c9da74705834c71dc6d1fb42f25a4e1a97ba",
+          "86c5fdc1b58945be2114cde104e6e026d5d305177dedf14c2cc3b9d819dbe92f",
+          "94d0fb018a09d41c39e49851e77a31e7837e03ec3eed3698508495b3e586c420"
+        ]
+      }
+    ],
+    "duplicated": [],
+    "mutated": [],
+    "verdict": "FAIL",
+    "unverified_reason": null
+  },
+  "policy": {
+    "identity_rule": "composite:[order_id,line_id]",
+    "canon": {
+      "version": 1,
+      "timestamp_precision": "micros",
+      "decimal_scale": 6,
+      "unicode": "NFC",
+      "null_token": "\u0000",
+      "field_order": "lexicographic",
+      "array_as_set": false
+    },
+    "hash_algorithm": "sha256",
+    "tolerances": {
+      "max_drops": 0,
+      "duplicates": "FORBID",
+      "max_mutations": 0
+    },
+    "late_arrival_window": "900s"
+  },
+  "chain": {
+    "prev_proof_hash": null
+  },
+  "signature": {
+    "alg": "ed25519",
+    "public_key": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+    "sig": "s+dTZQ0oqK0LeWa4+7KZlUOiSMFkARljk+8YtyXJDoyrf8fTUz0daC6Bdc2/ntC17f8ejrFfwmNs0Bp5VpcDCg=="
+  }
+}
