@@ -39,13 +39,13 @@ Use this checklist with the HTML report from `./scripts/run-coverage.sh`. Every 
 
 Ensure tests exist for each path in the verify pseudocode ([VRP-v0.1.md](../spec/VRP-v0.1.md)):
 
-- [ ] Valid proof → `PASS`
-- [ ] Bad signature → `FAIL` / tamper
-- [ ] Hash chain mismatch → `FAIL`
-- [ ] Reconciliation mismatch (drop/dup/mutation) → `FAIL`
-- [ ] Schema / version unsupported → `UNVERIFIED` with reason
-- [ ] Missing required VRP fields → `FAIL` or parse error
-- [ ] Inclusion proof verification (if enabled) → `ac_c5_1`
+- [x] Valid proof → `PASS` (`ac_c4_1`)
+- [x] Bad signature → `FAIL` / tamper (`ac_c4_2`, `tamper_gate_*`)
+- [x] Hash chain mismatch → `FAIL` (`tamper_gate_any_flipped_byte_fails`)
+- [x] Reconciliation mismatch (drop/dup/mutation) → `FAIL` (`ac_c4_3`)
+- [x] Schema / version unsupported → `UNVERIFIED` with reason (`honesty_gate_*`, canon_version gate)
+- [x] Missing required VRP fields → `FAIL` or parse error (serde + schema)
+- [x] Inclusion proof verification → `ac_c5_2`, `ac_c5_3`; commitment → `ac_c5_3` sink tamper
 
 ---
 
