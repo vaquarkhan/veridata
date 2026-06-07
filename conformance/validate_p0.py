@@ -49,6 +49,45 @@ def signing_payload(doc: dict) -> bytes:
     return jcs_canonical(subset).encode("utf-8")
 
 
+def merkle_node(left: bytes, right: bytes) -> bytes:
+    return hashlib.sha256(b"\x10" + left + right).digest()
+
+
+def verify_merkle_proof_with_index(
+    root: bytes, leaf: bytes, proof: list[bytes], index: int
+) -> bool:
+    current = leaf
+    for sibling in proof:
+        if index % 2 == 0:
+            current = merkle_node(current, sibling)
+        else:
+            current = merkle_node(sibling, current)
+        index //= 2
+    return current == root
+
+
+def verify_merkle_proof(root: bytes, leaf: bytes, proof: list[bytes], leaf_count: int) -> bool:
+    if leaf_count == 0:
+        return False
+    return any(
+        verify_merkle_proof_with_index(root, leaf, proof, idx) for idx in range(leaf_count)
+    )
+
+
+def verify_missing_inclusions(vrp: dict) -> str | None:
+    missing = vrp["reconciliation"]["missing"]
+    if not missing:
+        return None
+    root = bytes.fromhex(vrp["source_commitment"]["merkle_root"])
+    leaf_count = vrp["source_commitment"]["count"]
+    for entry in missing:
+        leaf = bytes.fromhex(entry["merkle_leaf"])
+        proof = [bytes.fromhex(h) for h in entry["inclusion_proof"]]
+        if not verify_merkle_proof(root, leaf, proof, leaf_count):
+            return "invalid inclusion proof"
+    return None
+
+
 def derive_verdict(reconciliation: dict, policy: dict) -> str:
     if reconciliation.get("unverified_reason"):
         return "UNVERIFIED"
@@ -86,6 +125,10 @@ def verify(vrp: dict, pubkey_b64: str) -> tuple[str, str | None]:
             return "FAIL", "PASS with unequal counts"
         if vrp["reconciliation"]["missing"]:
             return "FAIL", "PASS with missing"
+
+    inclusion_err = verify_missing_inclusions(vrp)
+    if inclusion_err:
+        return "FAIL", inclusion_err
 
     return vrp["reconciliation"]["verdict"], None
 

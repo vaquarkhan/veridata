@@ -125,7 +125,11 @@ fn merkle_node(hasher: &dyn Hasher, left: &Hash32, right: &Hash32) -> Hash32 {
 }
 
 /// Inclusion proof: sibling hashes from leaf to root (sorted-leaf tree).
-pub fn merkle_proof(sorted_leaves: &[Hash32], target: &Hash32) -> CoreResult<Vec<Hash32>> {
+pub fn merkle_proof(
+    hasher: &dyn Hasher,
+    sorted_leaves: &[Hash32],
+    target: &Hash32,
+) -> CoreResult<Vec<Hash32>> {
     let idx = sorted_leaves
         .iter()
         .position(|l| l == target)
@@ -133,7 +137,6 @@ pub fn merkle_proof(sorted_leaves: &[Hash32], target: &Hash32) -> CoreResult<Vec
 
     let mut layer: Vec<Hash32> = sorted_leaves.to_vec();
     let mut index = idx;
-    let hasher = Sha256Hasher;
     let mut proof = Vec::new();
 
     while layer.len() > 1 {
@@ -149,12 +152,26 @@ pub fn merkle_proof(sorted_leaves: &[Hash32], target: &Hash32) -> CoreResult<Vec
 
         let mut next = Vec::new();
         for chunk in layer.chunks(2) {
-            next.push(merkle_node(&hasher, &chunk[0], &chunk[1]));
+            next.push(merkle_node(hasher, &chunk[0], &chunk[1]));
         }
         index /= 2;
         layer = next;
     }
     Ok(proof)
+}
+
+/// Verify inclusion proof when the sorted leaf index is unknown (try 0..leaf_count).
+pub fn verify_merkle_proof(
+    hasher: &dyn Hasher,
+    root: &Hash32,
+    leaf: &Hash32,
+    proof: &[Hash32],
+    leaf_count: usize,
+) -> bool {
+    if leaf_count == 0 {
+        return false;
+    }
+    (0..leaf_count).any(|idx| verify_merkle_proof_with_index(hasher, root, leaf, proof, idx))
 }
 
 pub fn verify_merkle_proof_with_index(
@@ -218,8 +235,9 @@ mod tests {
         let root = merkle_root(&h, leaves.clone());
         leaves.sort();
         let idx = leaves.iter().position(|l| l == &leaf).unwrap();
-        let proof = merkle_proof(&leaves, &leaf).unwrap();
+        let proof = merkle_proof(&h, &leaves, &leaf).unwrap();
         assert!(verify_merkle_proof_with_index(&h, &root, &leaf, &proof, idx));
+        assert!(verify_merkle_proof(&h, &root, &leaf, &proof, leaves.len()));
     }
 
     #[test]
@@ -232,8 +250,9 @@ mod tests {
         let root = merkle_root(&h, leaves.clone());
         leaves.sort();
         let idx = leaves.iter().position(|l| l == &leaf).unwrap();
-        let mut proof = merkle_proof(&leaves, &leaf).unwrap();
+        let mut proof = merkle_proof(&h, &leaves, &leaf).unwrap();
         proof[0] = h.hash(b"tampered");
         assert!(!verify_merkle_proof_with_index(&h, &root, &leaf, &proof, idx));
+        assert!(!verify_merkle_proof(&h, &root, &leaf, &proof, leaves.len()));
     }
 }

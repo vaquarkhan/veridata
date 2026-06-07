@@ -277,4 +277,18 @@ fn ac_c5_1_inclusion_proof_structure_present() {
     let doc: VrpDocument = serde_json::from_str(&text).unwrap();
     assert!(!doc.reconciliation.missing.is_empty());
     assert!(!doc.reconciliation.missing[0].inclusion_proof.is_empty());
+    assert!(!doc.reconciliation.missing[0].merkle_leaf.is_empty());
+}
+
+#[test]
+fn ac_c5_2_tampered_inclusion_proof_fails() {
+    let path = conformance_dir().join("drop.vrp.json");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let mut doc: VrpDocument = serde_json::from_str(&text).unwrap();
+    let proof = &mut doc.reconciliation.missing[0].inclusion_proof;
+    let mut chars: Vec<char> = proof[0].chars().collect();
+    chars[0] = if chars[0] == 'a' { 'b' } else { 'a' };
+    proof[0] = chars.into_iter().collect();
+    let verifier = Verifier::from_public_key_b64(&test_pubkey()).unwrap();
+    assert_eq!(verifier.verify(&doc).unwrap(), VerifyOutcome::Fail);
 }

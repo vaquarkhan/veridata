@@ -24,7 +24,13 @@ impl KafkaSourceConnector {
         Self {
             bootstrap_servers: bootstrap_servers.into(),
             topic: topic.into(),
-            group_id: format!("veridata-{}", std::time::SystemTime::now().elapsed().unwrap_or_default().as_nanos()),
+            group_id: format!(
+                "veridata-{}",
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_nanos()
+            ),
         }
     }
 

@@ -115,6 +115,8 @@ pub struct Commitment {
 pub struct MissingRecord {
     pub id_hash: Hash32,
     pub source_pos: Position,
+    /// Sorted-Merkle leaf hash `H(0x00 || fp)` for offline inclusion verification.
+    pub merkle_leaf: Hash32,
     pub inclusion_proof: Vec<Hash32>,
 }
 

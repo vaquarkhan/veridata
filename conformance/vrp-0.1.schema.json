@@ -135,10 +135,11 @@
     "missing_entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id_hash", "source_pos", "inclusion_proof"],
+      "required": ["id_hash", "source_pos", "merkle_leaf", "inclusion_proof"],
       "properties": {
         "id_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "source_pos": { "type": "string", "minLength": 1 },
+        "merkle_leaf": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "inclusion_proof": {
           "type": "array",
           "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }

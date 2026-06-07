@@ -234,24 +234,23 @@ def reconcile(source: list[dict], sink: list[dict], policy: dict) -> dict:
 
         # Remaining source with sink present but different content -> mutated
         if s_list and kg.get(id_h):
-            for sj in s_list:
-                for kj in k_list:
-                    mutated.append(
-                        {
-                            "id_hash": hex32(id_h),
-                            "source_content_hash": hex32(sj["content_hash"]),
-                            "sink_content_hash": hex32(kj["content_hash"]),
-                        }
-                    )
-                    break
-                break
-            # unmatched source copies -> missing
-            for sj in s_list[1:] if mutated else s_list:
+            id_has_mutation = False
+            if s_list and k_list:
+                mutated.append(
+                    {
+                        "id_hash": hex32(id_h),
+                        "source_content_hash": hex32(s_list[0]["content_hash"]),
+                        "sink_content_hash": hex32(k_list[0]["content_hash"]),
+                    }
+                )
+                id_has_mutation = True
+            for sj in s_list[1:] if id_has_mutation else s_list:
                 leaf = merkle_leaf(sj["fp"])
                 missing.append(
                     {
                         "id_hash": hex32(sj["id_hash"]),
                         "source_pos": pos_b64(sj["pos"]["kind"], sj["pos"]["value"]),
+                        "merkle_leaf": hex32(leaf),
                         "inclusion_proof": merkle_proof(source_leaves, leaf),
                     }
                 )
@@ -262,6 +261,7 @@ def reconcile(source: list[dict], sink: list[dict], policy: dict) -> dict:
                     {
                         "id_hash": hex32(sj["id_hash"]),
                         "source_pos": pos_b64(sj["pos"]["kind"], sj["pos"]["value"]),
+                        "merkle_leaf": hex32(leaf),
                         "inclusion_proof": merkle_proof(source_leaves, leaf),
                     }
                 )

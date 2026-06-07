@@ -39,6 +39,7 @@ pub struct CommitmentJson {
 pub struct MissingJson {
     pub id_hash: String,
     pub source_pos: String,
+    pub merkle_leaf: String,
     pub inclusion_proof: Vec<String>,
 }
 
@@ -137,6 +138,7 @@ impl From<&MissingRecord> for MissingJson {
         Self {
             id_hash: hex::encode(m.id_hash),
             source_pos: B64.encode(pos_json.to_string()),
+            merkle_leaf: hex::encode(m.merkle_leaf),
             inclusion_proof: m.inclusion_proof.iter().map(hex::encode).collect(),
         }
     }

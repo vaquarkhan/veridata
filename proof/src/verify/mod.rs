@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::{Signature, Verifier as DalekVerifier, VerifyingKey};
 use sha2::{Digest, Sha256};
-use veridata_core::hash::hasher_for;
+use veridata_core::hash::{hasher_for, verify_merkle_proof};
 use veridata_core::model::Hash32;
 use veridata_core::model::{DuplicatePolicy, Verdict};
 use veridata_core::recon::derive_verdict;
@@ -100,8 +100,9 @@ impl Verifier {
         if !doc.reconciliation.missing.is_empty() {
             let hasher = hasher_for(&doc.hash_algorithm)?;
             let source_root = parse_hash32(&doc.source_commitment.merkle_root)?;
+            let leaf_count = doc.source_commitment.count as usize;
             for m in &doc.reconciliation.missing {
-                if !verify_missing_inclusion(hasher.as_ref(), &source_root, m)? {
+                if !verify_missing_inclusion(hasher.as_ref(), &source_root, leaf_count, m)? {
                     return Ok(VerifyOutcome::Fail);
                 }
             }
@@ -136,22 +137,16 @@ fn parse_tolerances(t: &crate::format::TolerancesJson) -> VrpResult<veridata_cor
 fn verify_missing_inclusion(
     hasher: &dyn veridata_core::hash::Hasher,
     root: &Hash32,
+    leaf_count: usize,
     m: &crate::format::MissingJson,
 ) -> VrpResult<bool> {
-    // Inclusion proof validates structure when leaf index is unknown;
-    // try both parities for single-sibling proofs (P1 minimal gate).
+    let leaf = parse_hash32(&m.merkle_leaf)?;
     let proof: Vec<Hash32> = m
         .inclusion_proof
         .iter()
         .map(|h| parse_hash32(h))
         .collect::<VrpResult<_>>()?;
-    if proof.is_empty() {
-        return Ok(true);
-    }
-    // Reconstruct leaf from id_hash is not possible without fp; trust proof shape for P1
-    // when commitment root matches embedded evidence (signature + verdict gate primary).
-    let _ = (hasher, root, proof);
-    Ok(true)
+    Ok(verify_merkle_proof(hasher, root, &leaf, &proof, leaf_count))
 }
 
 pub fn verify_file(path: &std::path::Path, pubkey_b64: &str) -> VrpResult<VerifyOutcome> {

@@ -107,24 +107,28 @@ pub fn reconcile(
         }
 
         if !s_list.is_empty() && kg.contains_key(id_h) {
-            if let (Some(sj), Some(kj)) = (s_list.first(), k_list.first()) {
+            let id_has_mutation = if let (Some(sj), Some(kj)) = (s_list.first(), k_list.first()) {
                 mutated.push(crate::model::MutatedRecord {
                     id_hash: *id_h,
                     source_content_hash: sj.content_hash,
                     sink_content_hash: kj.content_hash,
                 });
-            }
-            let missing_src = if mutated.is_empty() {
-                &s_list[..]
+                true
             } else {
+                false
+            };
+            let missing_src = if id_has_mutation {
                 &s_list[1..]
+            } else {
+                &s_list[..]
             };
             for sj in missing_src {
                 let leaf = crate::hash::merkle_leaf(hasher, &sj.fp);
                 missing.push(crate::model::MissingRecord {
                     id_hash: sj.id_hash,
                     source_pos: sj.pos.clone(),
-                    inclusion_proof: crate::hash::merkle_proof(&source_leaves, &leaf)?,
+                    merkle_leaf: leaf,
+                    inclusion_proof: crate::hash::merkle_proof(hasher, &source_leaves, &leaf)?,
                 });
             }
         } else {
@@ -133,7 +137,8 @@ pub fn reconcile(
                 missing.push(crate::model::MissingRecord {
                     id_hash: sj.id_hash,
                     source_pos: sj.pos.clone(),
-                    inclusion_proof: crate::hash::merkle_proof(&source_leaves, &leaf)?,
+                    merkle_leaf: leaf,
+                    inclusion_proof: crate::hash::merkle_proof(hasher, &source_leaves, &leaf)?,
                 });
             }
         }
@@ -214,7 +219,7 @@ pub fn derive_verdict(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::canon::CanonValue;
+    use crate::canon::{CanonValue, Record};
     use crate::hash::Sha256Hasher;
     use crate::model::{DuplicatePolicy, Tolerances};
     use std::collections::BTreeMap;
@@ -340,6 +345,35 @@ mod tests {
         let out = reconcile(&src, &snk, &policy, &Sha256Hasher).unwrap();
         assert_eq!(out.result.verdict, crate::model::Verdict::Pass);
         assert!(!out.result.duplicated.is_empty());
+    }
+
+    #[test]
+    fn ac_b2_3_mutation_and_drop_independent_ids() {
+        let policy = default_policy();
+        let fields = vec![
+            "order_id".into(),
+            "line_id".into(),
+            "amount".into(),
+            "status".into(),
+        ];
+        let src = sample_fps(3);
+        let mut snk = sample_fps(3);
+
+        // id 1002: mutation (change amount on sink)
+        let mut rec: Record = BTreeMap::new();
+        rec.insert("order_id".into(), CanonValue::String("1002".into()));
+        rec.insert("line_id".into(), CanonValue::String("1".into()));
+        rec.insert("amount".into(), CanonValue::String("dec:999.99".into()));
+        rec.insert("status".into(), CanonValue::String("shipped".into()));
+        snk[2] = build_fingerprint(&rec, &fields, &SALT, kafka_pos(2), &policy).unwrap();
+
+        // id 1000: pure drop (remove sink copy)
+        snk.remove(0);
+
+        let out = reconcile(&src, &snk, &policy, &Sha256Hasher).unwrap();
+        assert_eq!(out.result.mutated.len(), 1);
+        assert_eq!(out.result.missing.len(), 1);
+        assert_eq!(out.result.missing[0].id_hash, src[0].id_hash);
     }
 
     #[test]
