@@ -1,0 +1,20 @@
+[package]
+name = "veridata-e2e"
+description = "End-to-end tests: Kafka -> Iceberg via SPI"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+veridata-core.workspace = true
+veridata-spi.workspace = true
+veridata-connector-kafka = { path = "../connectors/kafka" }
+veridata-connector-iceberg = { path = "../connectors/iceberg" }
+serde_json.workspace = true
+
+[dev-dependencies]
+veridata-core = { workspace = true, features = ["test-util"] }
+veridata-proof.workspace = true
+veridata-spi.workspace = true
+tempfile = "3"

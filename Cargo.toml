@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+members = [
+    "core",
+    "proof",
+    "spi",
+    "connectors/kafka",
+    "connectors/iceberg",
+    "e2e",
+    "cli",
+]
+default-members = ["core", "proof", "spi", "connectors/kafka", "connectors/iceberg", "cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["Vaquar Khan"]
+repository = "https://github.com/vaquarkhan/veridata"
+
+[workspace.dependencies]
+sha2 = "0.10"
+blake3 = "1"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+hex = "0.4"
+base64 = "0.22"
+proptest = "1"
+unicode-normalization = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+veridata-core = { path = "core" }
+veridata-proof = { path = "proof" }
+veridata-spi = { path = "spi" }
+rdkafka = { version = "0.37", features = ["cmake-build"] }
+arrow = { version = "54", default-features = false, features = ["json"] }
+parquet = { version = "54", default-features = false, features = ["arrow"] }
+testcontainers = "0.23"
+testcontainers-modules = { version = "0.11", features = ["kafka"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+clap = { version = "4", features = ["derive"] }
+serde_yaml = "0.9"
+anyhow = "1"
+getrandom = "0.3"
+tempfile = "3"

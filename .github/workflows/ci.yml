@@ -1,0 +1,59 @@
+name: build-test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --workspace
+
+      - name: Unit and property tests
+        run: |
+          cargo test --workspace
+          cargo test -p veridata-core --features test-util --test proptest_recon
+
+      - name: P0 conformance (Python reference)
+        run: |
+          pip install jsonschema cryptography
+          python conformance/validate_p0.py
+
+      - name: Determinism gate
+        run: cargo test -p veridata-proof ac_c1_2_deterministic_except_created_at
+
+      - name: Architecture gate
+        run: cargo test -p veridata-proof --test architecture
+
+      - name: E2E SPI path (P2)
+        run: cargo test -p veridata-e2e -p veridata-spi -p veridata-connector-kafka -p veridata-connector-iceberg
+
+      - name: CLI integration (P3)
+        run: cargo test -p veridata-cli
+
+      - name: CLI demo smoke
+        run: |
+          cargo build -p veridata-cli
+          ./scripts/demo.sh .ci-demo
+
+      - name: Install coverage tools
+        run: |
+          rustup component add llvm-tools-preview
+          cargo install cargo-llvm-cov --locked
+
+      - name: Coverage gate (100% core + proof)
+        run: |
+          cargo llvm-cov \
+            --package veridata-core \
+            --package veridata-proof \
+            --lib \
+            --features veridata-core/test-util \
+            --ignore-filename-regex 'testutil' \
+            --fail-under-lines 100 \
+            --summary-only

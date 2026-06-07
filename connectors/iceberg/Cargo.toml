@@ -1,0 +1,19 @@
+[package]
+name = "veridata-connector-iceberg"
+description = "Apache Iceberg sink connector for veridata (filesystem warehouse reference)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+veridata-core.workspace = true
+veridata-spi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+arrow.workspace = true
+parquet.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+veridata-core = { workspace = true, features = ["test-util"] }

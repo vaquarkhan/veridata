@@ -1,5 +1,7 @@
 # veridata
 
+**Author:** [Vaquar Khan](https://github.com/vaquarkhan)
+
 **Verifiable Reconciliation Proofs (VRPs)** — signed, tamper-evident, independently verifiable receipts proving that, over a defined boundary, a data sink faithfully reflects a data source, with explicit detection of dropped, duplicated, and silently mutated records.
 
 > The guarantee is **verifiable reconciliation** with dup/drop/mutation detection and third-party-verifiable proof over a boundary — not "exactly-once for everything."
@@ -8,17 +10,19 @@
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| **P0** | VRP v0.1 spec + conformance vectors | In progress |
-| P1 | Deterministic core + offline verifier | Planned |
-| P2 | Kafka → Iceberg reference path | Planned |
-| P3 | CLI, benchmarks, CI gate | Planned |
+| **P1** | Deterministic core + offline verifier | Complete |
+| **P2** | Kafka → Iceberg via SPI + E2E fault tests | Complete |
+| **P3** | CLI, benchmarks, demo | Complete |
+| P4 | Paper, standardization | Planned |
 
 ## Quick links
 
-- [Build specification](CURSOR-BUILD-SPEC.md) — agent/human source of truth for phased delivery
+- [Developer testing guide](docs/developer/TESTING.md) — run tests, 100% coverage, tutorials
+- [Coverage checklist](docs/developer/COVERAGE-CHECKLIST.md) — per-module 100% line targets
 - [VRP v0.1 specification](docs/spec/VRP-v0.1.md) — normative proof format and verify algorithm
 - [Conformance vectors](conformance/) — canonical test proofs with expected outcomes
-- [ADRs](docs/adr/) — language (Rust), reference path (Kafka→Iceberg)
+- [Benchmarks](BENCHMARKS.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## What a VRP proves
 
@@ -32,11 +36,23 @@ Given a **boundary** (offset range, time window, or batch id), a VRP commits to:
 
 Proofs contain **only salted hashes** — never raw field values or identities.
 
-## Verify offline
+## Quick start (CLI)
 
 ```bash
-# P1+ (not yet available)
-veridata verify --pubkey key.pem conformance/valid.vrp.json
+cargo build -p veridata-cli
+cargo run -p veridata-cli -- init
+cargo run -p veridata-cli -- reconcile --demo
+cargo run -p veridata-cli -- verify
+cargo run -p veridata-cli -- report
+```
+
+Or run the full demo: `powershell -File scripts/demo.ps1`
+
+## Verify offline (library / conformance)
+
+```bash
+cargo test -p veridata-proof --test p1_gates
+python conformance/validate_p0.py
 ```
 
 ## License

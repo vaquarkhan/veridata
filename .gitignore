@@ -1,11 +1,38 @@
+# Rust / Cargo
 /target/
-**/*.rs.bk
+**/target/
 Cargo.lock
+**/*.rs.bk
+
+# Coverage (cargo-llvm-cov)
+target/llvm-cov/
+target/llvm-cov-target/
+
+# Python
 *.pyc
 __pycache__/
 .venv/
 *.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# IDE / editor
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
 .DS_Store
+Thumbs.db
+
+# Local build agent spec (not published — keep on disk only)
+CURSOR-BUILD-SPEC.md
+
+# CLI demo / benchmark workspaces
+.veridata-demo/
+.bench-demo/
+.veridata/
+
+# OS / temp
+*.log
+*.tmp

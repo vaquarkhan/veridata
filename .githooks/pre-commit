@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Block staged content that attributes the project to Cursor or coding agents.
+set -euo pipefail
+
+patterns=(
+  '[Mm]ade[- ]with[- ]Cursor'
+  '[Mm]ade[- ]by[- ]Cursor'
+  'Co-authored-by:.*[Cc]ursor'
+  'Made-with:.*[Cc]ursor'
+  '[Cc]ursor [Aa]gent'
+  'single source of truth for the coding agent'
+)
+
+while IFS= read -r -d '' file; do
+  # Skip binary and ignored paths
+  case "$file" in
+    *CURSOR-BUILD-SPEC.md) continue ;;
+  esac
+  if ! git diff --cached -- "$file" | grep -q '^+'; then
+    continue
+  fi
+  added="$(git show ":$file" 2>/dev/null || true)"
+  for pattern in "${patterns[@]}"; do
+    if echo "$added" | grep -qE "$pattern"; then
+      echo "pre-commit hook: '$file' contains Cursor/agent attribution." >&2
+      echo "Remove it before committing. Author: Vaquar Khan." >&2
+      exit 1
+    fi
+  done
+done < <(git diff --cached --name-only -z --diff-filter=ACM)
+
+exit 0

@@ -1,0 +1,26 @@
+[package]
+name = "veridata-core"
+description = "Pure reconciliation engine for veridata (no I/O)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sha2.workspace = true
+blake3.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+hex.workspace = true
+unicode-normalization.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+
+[features]
+default = []
+test-util = []
+
+[[test]]
+name = "proptest_recon"
+required-features = ["test-util"]

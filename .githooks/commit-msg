@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Reject commit messages that mention Cursor or vendor attribution.
+set -euo pipefail
+
+msg_file="${1:?commit message file required}"
+msg="$(cat "$msg_file")"
+
+block_patterns=(
+  '[Mm]ade[- ]with[- ]Cursor'
+  '[Mm]ade[- ]by[- ]Cursor'
+  'Co-authored-by:.*[Cc]ursor'
+  'Made-with:.*[Cc]ursor'
+  '[Cc]ursor [Aa]gent'
+  '[Cc]ursor [Ii][Dd][Ee]'
+)
+
+for pattern in "${block_patterns[@]}"; do
+  if echo "$msg" | grep -qE "$pattern"; then
+    echo "commit-msg hook: remove Cursor attribution from the commit message." >&2
+    echo "Author this project as Vaquar Khan — no Cursor / agent footers." >&2
+    exit 1
+  fi
+done
+
+# Strip accidental Made-with lines if present (allow commit after warning)
+if echo "$msg" | grep -qiE 'made.with|made with'; then
+  echo "commit-msg hook: stripping vendor attribution lines from message." >&2
+  grep -viE 'made[- ]with|made with' "$msg_file" > "${msg_file}.clean" || true
+  mv "${msg_file}.clean" "$msg_file"
+fi
+
+exit 0

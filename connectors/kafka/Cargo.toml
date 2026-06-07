@@ -1,0 +1,23 @@
+[package]
+name = "veridata-connector-kafka"
+description = "Kafka source connector for veridata"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[dependencies]
+veridata-core.workspace = true
+veridata-spi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+rdkafka = { workspace = true, optional = true }
+
+[dev-dependencies]
+veridata-core = { workspace = true, features = ["test-util"] }
+
+[features]
+default = ["memory-backend"]
+memory-backend = []
+rdkafka-backend = ["dep:rdkafka"]
