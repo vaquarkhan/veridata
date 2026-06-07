@@ -13,6 +13,8 @@ pub fn default_policy() -> Policy {
         identity_rule: "composite:[order_id,line_id]".into(),
         canon: crate::model::CanonSpec::default(),
         hash_algorithm: "sha256".into(),
+        content_fields: content_fields(),
+        exclude_fields: vec!["_meta".into()],
         tolerances: crate::model::Tolerances::default(),
         late_arrival_window: "900s".into(),
     }
@@ -49,7 +51,10 @@ pub fn fingerprints_from_records(
     policy: &Policy,
     offset_start: u64,
 ) -> Vec<Fingerprint> {
-    let fields = content_fields();
+    let fields = crate::policy_util::effective_content_fields(
+        &policy.content_fields,
+        &policy.exclude_fields,
+    );
     records
         .iter()
         .enumerate()

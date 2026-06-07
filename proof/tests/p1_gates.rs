@@ -281,6 +281,26 @@ fn ac_c5_1_inclusion_proof_structure_present() {
 }
 
 #[test]
+fn ac_c5_3_tampered_sink_commitment_fails() {
+    let path = conformance_dir().join("drop.vrp.json");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let mut doc: VrpDocument = serde_json::from_str(&text).unwrap();
+    let mut chars: Vec<char> = doc.sink_commitment.merkle_root.chars().collect();
+    chars[0] = if chars[0] == 'a' { 'b' } else { 'a' };
+    doc.sink_commitment.merkle_root = chars.into_iter().collect();
+    let verifier = Verifier::from_public_key_b64(&test_pubkey()).unwrap();
+    assert_eq!(verifier.verify(&doc).unwrap(), VerifyOutcome::Fail);
+}
+
+#[test]
+fn ac_c10_1_cbor_roundtrip() {
+    let path = conformance_dir().join("valid.vrp.json");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let doc: VrpDocument = serde_json::from_str(&text).unwrap();
+    assert!(veridata_proof::format::cbor::roundtrip_equals_json(&doc).unwrap());
+}
+
+#[test]
 fn ac_c5_2_tampered_inclusion_proof_fails() {
     let path = conformance_dir().join("drop.vrp.json");
     let text = std::fs::read_to_string(&path).unwrap();

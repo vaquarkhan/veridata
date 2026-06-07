@@ -101,6 +101,11 @@ pub struct Policy {
     pub identity_rule: String,
     pub canon: CanonSpec,
     pub hash_algorithm: String,
+    /// Fields included in content hash (AC-A6).
+    pub content_fields: Vec<String>,
+    /// Fields excluded from content hash even if present on the record (AC-A6.1).
+    #[serde(default)]
+    pub exclude_fields: Vec<String>,
     pub tolerances: Tolerances,
     pub late_arrival_window: String,
 }

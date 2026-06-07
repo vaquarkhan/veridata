@@ -90,6 +90,10 @@ pub struct PolicyJson {
     pub identity_rule: String,
     pub canon: CanonSpecJson,
     pub hash_algorithm: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub content_fields: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub exclude_fields: Vec<String>,
     pub tolerances: TolerancesJson,
     pub late_arrival_window: String,
 }
@@ -190,6 +194,8 @@ impl From<&Policy> for PolicyJson {
                 array_as_set: p.canon.array_as_set,
             },
             hash_algorithm: p.hash_algorithm.clone(),
+            content_fields: p.content_fields.clone(),
+            exclude_fields: p.exclude_fields.clone(),
             tolerances: TolerancesJson {
                 max_drops: p.tolerances.max_drops,
                 duplicates: match p.tolerances.duplicates {

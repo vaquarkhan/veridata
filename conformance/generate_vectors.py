@@ -234,17 +234,16 @@ def reconcile(source: list[dict], sink: list[dict], policy: dict) -> dict:
 
         # Remaining source with sink present but different content -> mutated
         if s_list and kg.get(id_h):
-            id_has_mutation = False
-            if s_list and k_list:
+            pair_count = min(len(s_list), len(k_list))
+            for i in range(pair_count):
                 mutated.append(
                     {
                         "id_hash": hex32(id_h),
-                        "source_content_hash": hex32(s_list[0]["content_hash"]),
-                        "sink_content_hash": hex32(k_list[0]["content_hash"]),
+                        "source_content_hash": hex32(s_list[i]["content_hash"]),
+                        "sink_content_hash": hex32(k_list[i]["content_hash"]),
                     }
                 )
-                id_has_mutation = True
-            for sj in s_list[1:] if id_has_mutation else s_list:
+            for sj in s_list[pair_count:]:
                 leaf = merkle_leaf(sj["fp"])
                 missing.append(
                     {

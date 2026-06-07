@@ -6,6 +6,7 @@ pub const TAG_ID_HASH: u8 = 0x01;
 pub const TAG_CONTENT_HASH: u8 = 0x02;
 pub const TAG_FINGERPRINT: u8 = 0x03;
 pub const TAG_MERKLE_NODE: u8 = 0x10;
+pub const TAG_COMMUTATIVE: u8 = 0x20;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HashAlgorithm {
@@ -160,6 +161,21 @@ pub fn merkle_proof(
     Ok(proof)
 }
 
+/// Order-independent aggregate over fingerprint hashes (AC-B6).
+pub fn commutative_root(hasher: &dyn Hasher, mut fps: Vec<Hash32>) -> Hash32 {
+    fps.sort();
+    let mut acc = [0u8; 32];
+    for fp in fps {
+        for (i, b) in fp.iter().enumerate() {
+            acc[i] ^= b;
+        }
+    }
+    let mut input = Vec::with_capacity(1 + 32);
+    input.push(TAG_COMMUTATIVE);
+    input.extend_from_slice(&acc);
+    hasher.hash(&input)
+}
+
 /// Verify inclusion proof when the sorted leaf index is unknown (try 0..leaf_count).
 pub fn verify_merkle_proof(
     hasher: &dyn Hasher,
@@ -238,6 +254,17 @@ mod tests {
         let proof = merkle_proof(&h, &leaves, &leaf).unwrap();
         assert!(verify_merkle_proof_with_index(&h, &root, &leaf, &proof, idx));
         assert!(verify_merkle_proof(&h, &root, &leaf, &proof, leaves.len()));
+    }
+
+    #[test]
+    fn ac_b6_1_commutative_root_order_independent() {
+        let h = Sha256Hasher;
+        let fp1 = h.hash(b"a");
+        let fp2 = h.hash(b"b");
+        let fp3 = h.hash(b"c");
+        let r1 = commutative_root(&h, vec![fp1, fp2, fp3]);
+        let r2 = commutative_root(&h, vec![fp3, fp1, fp2]);
+        assert_eq!(r1, r2);
     }
 
     #[test]

@@ -107,22 +107,15 @@ pub fn reconcile(
         }
 
         if !s_list.is_empty() && kg.contains_key(id_h) {
-            let id_has_mutation = if let (Some(sj), Some(kj)) = (s_list.first(), k_list.first()) {
+            let pair_count = s_list.len().min(k_list.len());
+            for i in 0..pair_count {
                 mutated.push(crate::model::MutatedRecord {
                     id_hash: *id_h,
-                    source_content_hash: sj.content_hash,
-                    sink_content_hash: kj.content_hash,
+                    source_content_hash: s_list[i].content_hash,
+                    sink_content_hash: k_list[i].content_hash,
                 });
-                true
-            } else {
-                false
-            };
-            let missing_src = if id_has_mutation {
-                &s_list[1..]
-            } else {
-                &s_list[..]
-            };
-            for sj in missing_src {
+            }
+            for sj in &s_list[pair_count..] {
                 let leaf = crate::hash::merkle_leaf(hasher, &sj.fp);
                 missing.push(crate::model::MissingRecord {
                     id_hash: sj.id_hash,
@@ -231,6 +224,13 @@ mod tests {
             identity_rule: "composite:[order_id,line_id]".into(),
             canon: crate::model::CanonSpec::default(),
             hash_algorithm: "sha256".into(),
+            content_fields: vec![
+                "order_id".into(),
+                "line_id".into(),
+                "amount".into(),
+                "status".into(),
+            ],
+            exclude_fields: vec![],
             tolerances: Tolerances::default(),
             late_arrival_window: "900s".into(),
         }
@@ -345,6 +345,35 @@ mod tests {
         let out = reconcile(&src, &snk, &policy, &Sha256Hasher).unwrap();
         assert_eq!(out.result.verdict, crate::model::Verdict::Pass);
         assert!(!out.result.duplicated.is_empty());
+    }
+
+    #[test]
+    fn ac_b3_2_multiplicity_and_mutation_same_id() {
+        let policy = default_policy();
+        let fields = vec![
+            "order_id".into(),
+            "line_id".into(),
+            "amount".into(),
+            "status".into(),
+        ];
+        let make = |amount: &str| -> Fingerprint {
+            let mut rec: Record = BTreeMap::new();
+            rec.insert("order_id".into(), CanonValue::String("1000".into()));
+            rec.insert("line_id".into(), CanonValue::String("1".into()));
+            rec.insert("amount".into(), CanonValue::String(amount.into()));
+            rec.insert("status".into(), CanonValue::String("shipped".into()));
+            build_fingerprint(&rec, &fields, &SALT, kafka_pos(0), &policy).unwrap()
+        };
+        let src = vec![
+            make("dec:10.0"),
+            make("dec:11.0"),
+            make("dec:12.0"),
+        ];
+        let snk = vec![make("dec:99.0"), make("dec:88.0")];
+        let out = reconcile(&src, &snk, &policy, &Sha256Hasher).unwrap();
+        assert_eq!(out.result.mutated.len(), 2);
+        assert_eq!(out.result.missing.len(), 1);
+        assert_eq!(out.result.missing[0].id_hash, src[2].id_hash);
     }
 
     #[test]

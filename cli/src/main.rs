@@ -1,6 +1,7 @@
 mod config;
 mod doctor;
 mod keys;
+mod metrics;
 mod pipeline;
 mod report;
 mod store;
@@ -50,6 +51,9 @@ enum Commands {
         config: PathBuf,
         #[arg(long)]
         pubkey: Option<PathBuf>,
+        /// CI gate: print CHECK=OK|FAIL and exit non-zero on failure (AC-E2)
+        #[arg(long)]
+        check: bool,
     },
     /// Human-readable proof summary (no raw field values)
     Report {
@@ -78,7 +82,8 @@ fn main() -> anyhow::Result<()> {
             proof,
             config,
             pubkey,
-        } => cmd_verify(proof.as_deref(), &config, pubkey.as_deref()),
+            check,
+        } => cmd_verify(proof.as_deref(), &config, pubkey.as_deref(), check),
         Commands::Report { proof, config } => cmd_report(proof.as_deref(), &config),
         Commands::Doctor { config } => cmd_doctor(&config),
     }
@@ -116,6 +121,10 @@ fn cmd_reconcile(config: &PathBuf, demo: bool) -> anyhow::Result<()> {
     let result = run_reconcile(&cfg, demo)?;
     let store = ProofStore::new(&cfg.store.proofs_dir)?;
     let path = store.save(&result.doc)?;
+    let mut m = metrics::Metrics::default();
+    m.record_reconcile();
+    let metrics_path = cfg.store.proofs_dir.parent().unwrap_or(&cfg.store.proofs_dir).join("metrics.prom");
+    let _ = m.write_file(&metrics_path);
     println!("Reconcile complete");
     println!("  verdict:  {}", result.verdict);
     println!("  proof_id: {}", result.doc.proof_id);
@@ -127,6 +136,7 @@ fn cmd_verify(
     proof: Option<&str>,
     config: &PathBuf,
     pubkey: Option<&Path>,
+    check: bool,
 ) -> anyhow::Result<()> {
     let cfg = ReconConfig::load(config)?;
     let store = ProofStore::new(&cfg.store.proofs_dir)?;
@@ -137,8 +147,17 @@ fn cmd_verify(
         None => load_pubkey_b64(&cfg.crypto.public_key_file)?,
     };
     let outcome = verify_proof(&path, &pub_b64)?;
-    println!("verify {} -> {:?}", path.display(), outcome);
-    if outcome != veridata_proof::VerifyOutcome::Pass {
+    let pass = outcome == veridata_proof::VerifyOutcome::Pass;
+    let mut m = metrics::Metrics::default();
+    m.record_verify(pass);
+    let metrics_path = cfg.store.proofs_dir.parent().unwrap_or(&cfg.store.proofs_dir).join("metrics.prom");
+    let _ = m.write_file(&metrics_path);
+    if check {
+        println!("CHECK={}", if pass { "OK" } else { "FAIL" });
+    } else {
+        println!("verify {} -> {:?}", path.display(), outcome);
+    }
+    if !pass {
         std::process::exit(1);
     }
     Ok(())

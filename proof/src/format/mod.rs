@@ -1,4 +1,5 @@
 mod error;
+pub mod cbor;
 pub mod jcs;
 mod types;
 

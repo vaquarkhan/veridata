@@ -11,7 +11,7 @@ name = "veridata"
 path = "src/main.rs"
 
 [dependencies]
-veridata-core = { path = "../core", features = ["test-util"] }
+veridata-core = { path = "../core" }
 veridata-proof = { path = "../proof" }
 veridata-spi = { path = "../spi" }
 veridata-connector-kafka = { path = "../connectors/kafka" }
@@ -29,3 +29,5 @@ thiserror.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+serde_json.workspace = true
+base64.workspace = true

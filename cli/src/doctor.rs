@@ -51,7 +51,7 @@ pub fn run(config_path: &Path) -> DoctorReport {
                 if pk {
                     checks.push((
                         "key load".into(),
-                        keys::load_signer(&cfg.crypto.private_key_file).is_ok(),
+                        keys::load_signer(&cfg.crypto).is_ok(),
                         "Ed25519 private key readable".into(),
                     ));
                 }

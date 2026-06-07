@@ -2,11 +2,15 @@ use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::{Signature, Verifier as DalekVerifier, VerifyingKey};
 use sha2::{Digest, Sha256};
 use veridata_core::hash::{hasher_for, verify_merkle_proof};
+use veridata_core::late_arrival_window_secs;
 use veridata_core::model::Hash32;
 use veridata_core::model::{DuplicatePolicy, Verdict};
 use veridata_core::recon::derive_verdict;
 
+mod commitments;
+
 use crate::format::jcs;
+use commitments::verify_commitment_structure;
 use crate::format::{parse_hash32, parse_verdict, VrpDocument, VrpError, VrpResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,6 +65,14 @@ impl Verifier {
         }
         if doc.canon_version != 1 {
             return Ok(VerifyOutcome::Unverified);
+        }
+
+        if late_arrival_window_secs(&doc.policy.late_arrival_window).is_none() {
+            return Ok(VerifyOutcome::Fail);
+        }
+
+        if !verify_commitment_structure(doc) {
+            return Ok(VerifyOutcome::Fail);
         }
 
         let tolerances = parse_tolerances(&doc.policy.tolerances)?;

@@ -74,6 +74,42 @@ def verify_merkle_proof(root: bytes, leaf: bytes, proof: list[bytes], leaf_count
     )
 
 
+def verify_commitment_structure(vrp: dict) -> str | None:
+    r = vrp["reconciliation"]
+    src = vrp["source_commitment"]["count"]
+    snk = vrp["sink_commitment"]["count"]
+    matched = r["matched"]["count"]
+    missing = len(r["missing"])
+    mutated = len(r["mutated"])
+    if matched + missing + mutated != src:
+        return "source commitment count mismatch"
+    dup_excess = sum(
+        max(0, d["sink_multiplicity"] - d["source_multiplicity"])
+        for d in r["duplicated"]
+    )
+    if matched + mutated + dup_excess != snk:
+        return "sink commitment count mismatch"
+    if (
+        mutated == 0
+        and dup_excess == 0
+        and matched == snk
+        and r["matched"]["merkle_root"] != vrp["sink_commitment"]["merkle_root"]
+    ):
+        return "matched/sink merkle root mismatch"
+    if (
+        r["verdict"] == "PASS"
+        and missing == 0
+        and mutated == 0
+        and not r["duplicated"]
+        and (
+            vrp["source_commitment"]["merkle_root"] != vrp["sink_commitment"]["merkle_root"]
+            or vrp["source_commitment"]["merkle_root"] != r["matched"]["merkle_root"]
+        )
+    ):
+        return "PASS commitment roots diverge"
+    return None
+
+
 def verify_missing_inclusions(vrp: dict) -> str | None:
     missing = vrp["reconciliation"]["missing"]
     if not missing:
@@ -125,6 +161,10 @@ def verify(vrp: dict, pubkey_b64: str) -> tuple[str, str | None]:
             return "FAIL", "PASS with unequal counts"
         if vrp["reconciliation"]["missing"]:
             return "FAIL", "PASS with missing"
+
+    commitment_err = verify_commitment_structure(vrp)
+    if commitment_err:
+        return "FAIL", commitment_err
 
     inclusion_err = verify_missing_inclusions(vrp)
     if inclusion_err:

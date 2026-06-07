@@ -40,6 +40,9 @@ pub struct SinkConfig {
     pub warehouse: PathBuf,
     pub table: String,
     pub boundary: IcebergBoundaryConfig,
+    /// Expected column names for AC-A7 schema drift detection.
+    #[serde(default)]
+    pub expected_schema: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +56,8 @@ pub struct PolicyConfig {
     pub identity_rule: String,
     pub hash_algorithm: String,
     pub content_fields: Vec<String>,
+    #[serde(default)]
+    pub exclude_fields: Vec<String>,
     pub tolerances: TolerancesConfig,
     pub late_arrival_window: Option<String>,
 }
@@ -68,6 +73,9 @@ pub struct TolerancesConfig {
 pub struct CryptoConfig {
     pub private_key_file: PathBuf,
     pub public_key_file: PathBuf,
+    /// Optional KMS key id (file-backed provider for AC-C7).
+    #[serde(default)]
+    pub kms_key_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,6 +106,7 @@ impl ReconConfig {
                     snapshot_from: 1,
                     snapshot_to: 1,
                 },
+                expected_schema: None,
             },
             policy: PolicyConfig {
                 identity_rule: "composite:[order_id,line_id]".into(),
@@ -108,6 +117,7 @@ impl ReconConfig {
                     "amount".into(),
                     "status".into(),
                 ],
+                exclude_fields: vec![],
                 tolerances: TolerancesConfig {
                     max_drops: 0,
                     max_mutations: 0,
@@ -118,6 +128,7 @@ impl ReconConfig {
             crypto: CryptoConfig {
                 private_key_file: PathBuf::from(".veridata/keys/signing.key.b64"),
                 public_key_file: PathBuf::from(".veridata/keys/signing.pub.b64"),
+                kms_key_id: None,
             },
             store: StoreConfig {
                 proofs_dir: PathBuf::from(".veridata/proofs"),
@@ -149,6 +160,8 @@ impl ReconConfig {
             identity_rule: self.policy.identity_rule.clone(),
             canon: CanonSpec::default(),
             hash_algorithm: self.policy.hash_algorithm.clone(),
+            content_fields: self.policy.content_fields.clone(),
+            exclude_fields: self.policy.exclude_fields.clone(),
             tolerances: Tolerances {
                 max_drops: self.policy.tolerances.max_drops,
                 duplicates,

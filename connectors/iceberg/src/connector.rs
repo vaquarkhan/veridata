@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
-use arrow::array::{Array, StringArray};
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
-use veridata_core::canon::Record;
+use parquet::arrow::ProjectionMask;
 use veridata_core::model::{Boundary, BoundaryMode, Fingerprint, Policy, Position, PositionKind};
 use veridata_core::recon::build_fingerprint;
 use veridata_spi::{
@@ -10,6 +9,7 @@ use veridata_spi::{
     SinkConnector, SinkFingerprintBatch, ConnectorError, ConnectorResult,
 };
 
+use crate::parquet_value::{record_from_batch, schema_fields_from_batch};
 use crate::warehouse::{load_snapshots, snapshots_in_range, WarehouseConfig};
 
 pub struct IcebergSinkConnector {
@@ -26,13 +26,14 @@ impl IcebergSinkConnector {
         }
     }
 
-    fn read_rows(
+    fn fingerprint_rows(
         &self,
         boundary: &Boundary,
+        policy: &Policy,
+        salt: &[u8],
         content_fields: &[String],
-        identity_fields: &[String],
         mode: PushdownMode,
-    ) -> ConnectorResult<Vec<(Record, Position)>> {
+    ) -> ConnectorResult<(Vec<Fingerprint>, bool)> {
         if boundary.mode != BoundaryMode::BatchId {
             return Err(ConnectorError::InvalidBoundary(
                 "iceberg sink uses BATCH_ID snapshot boundary".into(),
@@ -42,8 +43,14 @@ impl IcebergSinkConnector {
         let manifests = load_snapshots(&self.config.metadata_path())?;
         let selected = snapshots_in_range(&manifests, spec.snapshot_from, spec.snapshot_to);
 
+        let identity_rule = veridata_core::identity::identity_fields(&policy.identity_rule)?;
+        let id_names: Vec<String> = match identity_rule {
+            veridata_core::identity::IdentityRule::Field(n) => vec![n],
+            veridata_core::identity::IdentityRule::Composite(v) => v,
+        };
+
         let mut selected_cols: Vec<String> = content_fields.to_vec();
-        for f in identity_fields {
+        for f in &id_names {
             if !selected_cols.contains(f) {
                 selected_cols.push(f.clone());
             }
@@ -51,8 +58,9 @@ impl IcebergSinkConnector {
         selected_cols.sort();
         selected_cols.dedup();
 
-        let _pushdown = mode == PushdownMode::Pushdown;
-        let mut rows = Vec::new();
+        let pushdown = mode == PushdownMode::Pushdown;
+        let mut fingerprints = Vec::new();
+        let mut projection_used = false;
 
         for snap in selected {
             for (file_idx, file) in snap.files.iter().enumerate() {
@@ -60,6 +68,31 @@ impl IcebergSinkConnector {
                 let reader = std::fs::File::open(&path).map_err(|e| ConnectorError::Io(e.to_string()))?;
                 let builder = ParquetRecordBatchReaderBuilder::try_new(reader)
                     .map_err(|e| ConnectorError::Iceberg(e.to_string()))?;
+
+                let builder = if pushdown {
+                    let arrow_schema = builder.schema();
+                    let parquet_schema = builder.parquet_schema();
+                    let mut roots: Vec<usize> = selected_cols
+                        .iter()
+                        .filter_map(|name| {
+                            arrow_schema
+                                .column_with_name(name)
+                                .map(|(i, _)| parquet_schema.get_column_root_idx(i))
+                        })
+                        .collect();
+                    roots.sort_unstable();
+                    roots.dedup();
+                    if roots.len() == selected_cols.len() {
+                        projection_used = true;
+                        let mask = ProjectionMask::roots(parquet_schema, roots);
+                        builder.with_projection(mask)
+                    } else {
+                        builder
+                    }
+                } else {
+                    builder
+                };
+
                 let mut batch_reader = builder
                     .build()
                     .map_err(|e| ConnectorError::Iceberg(e.to_string()))?;
@@ -70,17 +103,31 @@ impl IcebergSinkConnector {
                     .transpose()
                     .map_err(|e| ConnectorError::Iceberg(e.to_string()))?
                 {
+                    let cols: Vec<String> = if pushdown && projection_used {
+                        selected_cols.clone()
+                    } else {
+                        schema_fields_from_batch(&batch)
+                            .into_iter()
+                            .filter(|c| selected_cols.contains(c))
+                            .collect()
+                    };
                     let n = batch.num_rows();
                     for i in 0..n {
-                        let rec = record_from_batch(&batch, i, &selected_cols)?;
+                        let rec = record_from_batch(&batch, i, &cols)?;
                         let pos = iceberg_pos(snap.snapshot_id, file_idx as u32, row_idx);
-                        rows.push((rec, pos));
+                        fingerprints.push(build_fingerprint(
+                            &rec,
+                            content_fields,
+                            salt,
+                            pos,
+                            policy,
+                        )?);
                         row_idx += 1;
                     }
                 }
             }
         }
-        Ok(rows)
+        Ok((fingerprints, pushdown && projection_used))
     }
 }
 
@@ -97,63 +144,34 @@ impl SinkConnector for IcebergSinkConnector {
         content_fields: &[String],
         mode: PushdownMode,
     ) -> ConnectorResult<SinkFingerprintBatch> {
-        let identity_rule = veridata_core::identity::identity_fields(&policy.identity_rule)?;
-        let id_names: Vec<String> = match identity_rule {
-            veridata_core::identity::IdentityRule::Field(n) => vec![n],
-            veridata_core::identity::IdentityRule::Composite(v) => v,
-        };
-
-        let row_data = self.read_rows(boundary, content_fields, &id_names, mode)?;
-        let fingerprints: Vec<Fingerprint> = row_data
-            .into_iter()
-            .map(|(rec, pos)| build_fingerprint(&rec, content_fields, salt, pos, policy))
-            .collect::<Result<_, _>>()?;
-
+        let (fingerprints, pushdown_used) =
+            self.fingerprint_rows(boundary, policy, salt, content_fields, mode)?;
         Ok(SinkFingerprintBatch {
             fingerprints,
-            pushdown_used: mode == PushdownMode::Pushdown,
+            pushdown_used,
         })
     }
 
     fn schema_snapshot(&self) -> ConnectorResult<SchemaSnapshot> {
-        Ok(SchemaSnapshot {
-            fields: vec![
-                "order_id".into(),
-                "line_id".into(),
-                "amount".into(),
-                "status".into(),
-            ],
-        })
-    }
-}
-
-fn record_from_batch(
-    batch: &arrow::record_batch::RecordBatch,
-    row: usize,
-    columns: &[String],
-) -> ConnectorResult<Record> {
-    use std::collections::BTreeMap;
-    use veridata_core::canon::CanonValue;
-
-    let mut map = BTreeMap::new();
-    for name in columns {
-        let col = batch
+        let manifests = load_snapshots(&self.config.metadata_path())?;
+        let Some(first) = manifests.first() else {
+            return Ok(SchemaSnapshot { fields: vec![] });
+        };
+        let Some(file) = first.files.first() else {
+            return Ok(SchemaSnapshot { fields: vec![] });
+        };
+        let path = self.config.data_path(file);
+        let reader = std::fs::File::open(&path).map_err(|e| ConnectorError::Io(e.to_string()))?;
+        let builder = ParquetRecordBatchReaderBuilder::try_new(reader)
+            .map_err(|e| ConnectorError::Iceberg(e.to_string()))?;
+        let fields: Vec<String> = builder
             .schema()
-            .column_with_name(name)
-            .ok_or_else(|| ConnectorError::Iceberg(format!("missing column {name}")))?
-            .0;
-        let array = batch.column(col);
-        let s = array
-            .as_any()
-            .downcast_ref::<StringArray>()
-            .ok_or_else(|| ConnectorError::Iceberg(format!("column {name} not utf8")))?;
-        if s.is_null(row) {
-            map.insert(name.clone(), CanonValue::Null);
-        } else {
-            map.insert(name.clone(), CanonValue::String(s.value(row).to_string()));
-        }
+            .fields()
+            .iter()
+            .map(|f| f.name().clone())
+            .collect();
+        Ok(SchemaSnapshot { fields })
     }
-    Ok(map)
 }
 
 pub fn iceberg_pos(snapshot_id: i64, file_index: u32, row_index: u64) -> Position {
@@ -168,27 +186,15 @@ pub fn iceberg_pos(snapshot_id: i64, file_index: u32, row_index: u64) -> Positio
     }
 }
 
-/// Client-side baseline for AC-D4.2 comparison.
-pub fn fingerprint_client_side(
-    connector: &IcebergSinkConnector,
-    boundary: &Boundary,
-    policy: &Policy,
-    salt: &[u8],
-    content_fields: &[String],
-) -> ConnectorResult<Vec<Fingerprint>> {
-    let batch = connector.fingerprint_boundary(
-        boundary,
-        policy,
-        salt,
-        content_fields,
-        PushdownMode::ClientSide,
-    )?;
-    Ok(batch.fingerprints)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrow::array::{Int64Array, RecordBatch, StringArray};
+    use arrow::datatypes::{DataType, Field, Schema};
+    use parquet::arrow::ArrowWriter;
+    use parquet::file::properties::WriterProperties;
+    use std::fs;
+    use std::sync::Arc;
     use tempfile::tempdir;
     use veridata_core::testutil::{default_policy, content_fields, TEST_SALT};
 
@@ -205,6 +211,48 @@ mod tests {
         config
     }
 
+    fn write_typed_snapshot(dir: &tempfile::TempDir) -> WarehouseConfig {
+        let config = WarehouseConfig {
+            root: dir.path().to_path_buf(),
+            table: "typed".into(),
+        };
+        let table_dir = config.root.join(&config.table);
+        let data_dir = table_dir.join("data");
+        let meta_dir = table_dir.join("metadata");
+        fs::create_dir_all(&data_dir).unwrap();
+        fs::create_dir_all(&meta_dir).unwrap();
+        let file_name = "data/snap-1.parquet";
+        let file_path = table_dir.join(file_name);
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("order_id", DataType::Int64, false),
+            Field::new("line_id", DataType::Int64, false),
+            Field::new("amount", DataType::Float64, false),
+            Field::new("status", DataType::Utf8, false),
+        ]));
+        let batch = RecordBatch::try_new(
+            schema.clone(),
+            vec![
+                Arc::new(Int64Array::from(vec![1000, 1001])),
+                Arc::new(Int64Array::from(vec![1, 1])),
+                Arc::new(arrow::array::Float64Array::from(vec![10.5, 11.5])),
+                Arc::new(StringArray::from(vec!["shipped", "shipped"])),
+            ],
+        )
+        .unwrap();
+        let file = fs::File::create(&file_path).unwrap();
+        let mut writer =
+            ArrowWriter::try_new(file, schema, Some(WriterProperties::builder().build())).unwrap();
+        writer.write(&batch).unwrap();
+        writer.close().unwrap();
+        let manifests = serde_json::json!([{"snapshot_id":1,"files":[file_name]}]);
+        fs::write(
+            config.metadata_path(),
+            serde_json::to_string_pretty(&manifests).unwrap(),
+        )
+        .unwrap();
+        config
+    }
+
     #[test]
     fn ac_a4_2_iceberg_snapshot_range_reproducible() {
         let dir = tempdir().unwrap();
@@ -216,7 +264,9 @@ mod tests {
         };
         let policy = default_policy();
         let fields = content_fields();
-        let run = || connector.fingerprint_boundary(&boundary, &policy, &TEST_SALT, &fields, PushdownMode::Pushdown);
+        let run = || {
+            connector.fingerprint_boundary(&boundary, &policy, &TEST_SALT, &fields, PushdownMode::Pushdown)
+        };
         let a = run().unwrap();
         let b = run().unwrap();
         assert_eq!(a.fingerprints.len(), 2);
@@ -224,7 +274,7 @@ mod tests {
     }
 
     #[test]
-    fn ac_d4_1_only_fingerprints_returned() {
+    fn ac_d4_1_pushdown_uses_column_projection() {
         let dir = tempdir().unwrap();
         let config = write_test_snapshot(&dir);
         let connector = IcebergSinkConnector { config };
@@ -263,6 +313,25 @@ mod tests {
             .fingerprint_boundary(&boundary, &policy, &TEST_SALT, &fields, PushdownMode::ClientSide)
             .unwrap();
         assert_eq!(push.fingerprints, client.fingerprints);
+    }
+
+    #[test]
+    fn ac_a7_2_typed_parquet_columns_supported() {
+        let dir = tempdir().unwrap();
+        let config = write_typed_snapshot(&dir);
+        let connector = IcebergSinkConnector { config };
+        let snap = connector.schema_snapshot().unwrap();
+        assert!(snap.fields.contains(&"order_id".to_string()));
+        let boundary = Boundary {
+            mode: BoundaryMode::BatchId,
+            value: br#"{"snapshot_from":1,"snapshot_to":1}"#.to_vec(),
+        };
+        let policy = default_policy();
+        let fields = content_fields();
+        let batch = connector
+            .fingerprint_boundary(&boundary, &policy, &TEST_SALT, &fields, PushdownMode::Pushdown)
+            .unwrap();
+        assert_eq!(batch.fingerprints.len(), 2);
     }
 
     #[test]

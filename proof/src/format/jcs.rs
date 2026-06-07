@@ -1,4 +1,4 @@
-//! Minimal RFC 8785-style canonical JSON matching P0 Python reference.
+//! RFC 8785 (JCS) canonical JSON for signing payloads.
 
 use serde_json::Value;
 
@@ -17,12 +17,52 @@ pub fn signing_payload(doc: &VrpDocument) -> VrpResult<Vec<u8>> {
     Ok(canonical.into_bytes())
 }
 
+fn serialize_number(n: &serde_json::Number) -> String {
+    if let Some(u) = n.as_u64() {
+        return u.to_string();
+    }
+    if let Some(i) = n.as_i64() {
+        return i.to_string();
+    }
+    if let Some(f) = n.as_f64() {
+        if f.is_finite() {
+            return serde_json::Number::from_f64(f)
+                .map(|x| x.to_string())
+                .unwrap_or_else(|| "null".into());
+        }
+    }
+    "null".into()
+}
+
+fn serialize_string(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for ch in s.chars() {
+        match ch {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\u{0008}' => out.push_str("\\b"),
+            '\u{000C}' => out.push_str("\\f"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c.is_control() => {
+                use std::fmt::Write as _;
+                let _ = write!(out, "\\u{:04x}", c as u32);
+            }
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
 fn serialize(value: &Value) -> String {
     match value {
         Value::Null => "null".into(),
         Value::Bool(b) => if *b { "true" } else { "false" }.into(),
-        Value::Number(n) => n.to_string(),
-        Value::String(s) => serde_json::to_string(s).unwrap(),
+        Value::Number(n) => serialize_number(n),
+        Value::String(s) => serialize_string(s),
         Value::Array(arr) => {
             let parts: Vec<String> = arr.iter().map(serialize).collect();
             format!("[{}]", parts.join(","))

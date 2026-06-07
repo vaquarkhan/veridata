@@ -1,6 +1,10 @@
 use ed25519_dalek::{Signer as DalekSigner, SigningKey, VerifyingKey};
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 
+mod kms;
+
+pub use kms::{FileKmsSigner, PubkeyDirectory};
+
 use super::VrpError;
 
 pub trait Signer: Send + Sync {
