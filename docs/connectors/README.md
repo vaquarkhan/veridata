@@ -25,7 +25,7 @@ Default build uses an in-memory Kafka source (reproducible offset-range reads). 
 cargo test -p veridata-connector-kafka --features rdkafka-backend
 ```
 
-## Iceberg warehouse layout
+| [CLOUD-EXAMPLES.md](CLOUD-EXAMPLES.md) | P4 AWS/GCP/Azure/Databricks `recon.yaml` examples |
 
 ```
 warehouse/orders/

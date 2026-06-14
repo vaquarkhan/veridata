@@ -24,7 +24,7 @@
 | **P1** | Deterministic core + offline verifier | Complete |
 | **P2** | Kafka → Iceberg via SPI + E2E (demo backends) | Complete |
 | **P3** | CLI, metrics, `--check`, demo | Complete |
-| **P4** | Publishing + cloud connectors | In progress — [PyPI verifier](python/README.md); cloud connectors not started |
+| **P4** | Publishing + cloud connectors | Cloud connectors + KMS shipped; crates.io/releases pending |
 | **P5** | Connector breadth + advanced features | Not started — [roadmap](docs/developer/ROADMAP.md) |
 
 ## Quick links
@@ -54,7 +54,7 @@ Proofs contain **only salted hashes** — never raw field values or identities.
 ## What we do not ship (v0.1)
 
 - Automated **remediation**, **DLQ routing**, or **idempotent replay** (detect + prove only)
-- Production **cloud** connectors (MSK, S3, BigQuery, Databricks, etc.)
+- Production **cloud** connectors — build with `--features cloud`; see [cloud examples](docs/connectors/CLOUD-EXAMPLES.md)
 - Inline “zero-trust” gate in your pipeline — you call reconcile/verify; we provide the proof and verifier
 
 ## Quick start (Python — PyPI)

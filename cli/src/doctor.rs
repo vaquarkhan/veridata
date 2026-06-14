@@ -55,18 +55,21 @@ pub fn run(config_path: &Path) -> DoctorReport {
                         "Ed25519 private key readable".into(),
                     ));
                 }
-                let wh_ok = cfg.sink.warehouse.exists()
-                    || std::fs::create_dir_all(&cfg.sink.warehouse).is_ok();
-                checks.push((
-                    "warehouse".into(),
-                    wh_ok,
-                    cfg.sink.warehouse.display().to_string(),
-                ));
-                let store_ok = std::fs::create_dir_all(&cfg.store.proofs_dir).is_ok();
+                if let Some(wh) = &cfg.sink.warehouse {
+                    let wh_ok = wh.exists() || std::fs::create_dir_all(wh).is_ok();
+                    checks.push(("warehouse".into(), wh_ok, wh.display().to_string()));
+                } else if cfg.sink.warehouse_uri.is_some() {
+                    checks.push((
+                        "warehouse".into(),
+                        true,
+                        cfg.sink.warehouse_uri.clone().unwrap_or_default(),
+                    ));
+                }
+                let store_ok = crate::store::ProofStore::from_config(&cfg.store).is_ok();
                 checks.push((
                     "proof store".into(),
                     store_ok,
-                    cfg.store.proofs_dir.display().to_string(),
+                    format!("{:?}", cfg.store.kind),
                 ));
             }
             Err(e) => checks.push(("yaml parse".into(), false, e.to_string())),

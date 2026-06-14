@@ -4,8 +4,10 @@ members = [
     "core",
     "proof",
     "spi",
+    "cloud",
     "connectors/kafka",
     "connectors/iceberg",
+    "connectors/cloud",
     "e2e",
     "cli",
 ]

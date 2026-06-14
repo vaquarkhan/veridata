@@ -1,13 +1,16 @@
-use veridata_connector_iceberg::{IcebergSinkConnector, WarehouseConfig};
+use veridata_connector_iceberg::WarehouseConfig;
 use veridata_connector_kafka::MemoryKafkaSource;
-use veridata_core::model::{Boundary, BoundaryMode};
 use veridata_core::{effective_content_fields, generate_proof_salt};
 use veridata_e2e::{ingest_memory_to_iceberg, Fault};
 use veridata_proof::{build_vrp, VrpDocument};
 use veridata_spi::{check_schema_drift, PushdownMode, SchemaSnapshot, SinkConnector, SourceConnector};
 
 use crate::config::ReconConfig;
+use crate::connectors::{build_sink, build_source, kafka_boundary, sink_boundary};
 use crate::keys::load_signer;
+
+#[cfg(feature = "cloud")]
+use veridata_cloud::kms::producer_with_kms;
 
 pub struct ReconcileResult {
     pub doc: VrpDocument,
@@ -39,9 +42,13 @@ pub fn run_reconcile(config: &ReconConfig, demo: bool) -> anyhow::Result<Reconci
     policy.exclude_fields = config.policy.exclude_fields.clone();
 
     let salt = generate_proof_salt();
+    let kafka_boundary = kafka_boundary(config)?;
 
-    let source = MemoryKafkaSource::new(&config.source.topic);
-    if demo {
+    let source = if demo {
+        if config.source.kind != "memory_kafka" {
+            anyhow::bail!("--demo only supports memory_kafka source");
+        }
+        let mem = MemoryKafkaSource::new(&config.source.topic);
         let end = config
             .source
             .boundary
@@ -49,36 +56,31 @@ pub fn run_reconcile(config: &ReconConfig, demo: bool) -> anyhow::Result<Reconci
             .first()
             .map(|p| p.end)
             .unwrap_or(4);
-        seed_demo_messages(&source, (end + 1) as usize);
-    }
-
-    let kafka_boundary = Boundary {
-        mode: BoundaryMode::OffsetRange,
-        value: serde_json::to_vec(&serde_json::json!({
-            "partitions": config.source.boundary.partitions.iter().map(|p| {
-                serde_json::json!({"id": p.id, "start": p.start, "end": p.end})
-            }).collect::<Vec<_>>()
-        }))?,
+        seed_demo_messages(&mem, (end + 1) as usize);
+        let warehouse = WarehouseConfig {
+            root: config
+                .sink
+                .warehouse
+                .clone()
+                .unwrap_or_else(|| ".veridata/warehouse".into()),
+            table: config.sink.table.clone(),
+        };
+        std::fs::create_dir_all(&warehouse.root)?;
+        let snapshot_id = config.sink.boundary.snapshot_to;
+        ingest_memory_to_iceberg(
+            &mem,
+            &kafka_boundary,
+            &warehouse,
+            snapshot_id,
+            Fault::None,
+        )?;
+        crate::connectors::DynSource::Memory(mem)
+    } else {
+        build_source(config)?
     };
 
-    let warehouse = WarehouseConfig {
-        root: config.sink.warehouse.clone(),
-        table: config.sink.table.clone(),
-    };
-    std::fs::create_dir_all(&warehouse.root)?;
-
-    let snapshot_id = config.sink.boundary.snapshot_to;
-    ingest_memory_to_iceberg(&source, &kafka_boundary, &warehouse, snapshot_id, Fault::None)?;
-
-    let iceberg_boundary = Boundary {
-        mode: BoundaryMode::BatchId,
-        value: serde_json::to_vec(&serde_json::json!({
-            "snapshot_from": config.sink.boundary.snapshot_from,
-            "snapshot_to": config.sink.boundary.snapshot_to,
-        }))?,
-    };
-
-    let sink = IcebergSinkConnector::new(warehouse.root.clone(), &config.sink.table);
+    let sink = build_sink(config)?;
+    let iceberg_boundary = sink_boundary(config)?;
 
     if let Some(expected) = &config.sink.expected_schema {
         let actual = sink.schema_snapshot()?;
@@ -105,16 +107,29 @@ pub fn run_reconcile(config: &ReconConfig, demo: bool) -> anyhow::Result<Reconci
 
     let signer = load_signer(&config.crypto)?;
     let created_at = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    let producer = {
+        #[cfg(feature = "cloud")]
+        {
+            producer_with_kms(&config.producer, signer.as_ref())
+        }
+        #[cfg(not(feature = "cloud"))]
+        {
+            config.producer.clone()
+        }
+    };
+
+    let source_ref = format!("{}:{}", source.source_ref(), config.source.topic);
+    let sink_ref = format!("{}:{}", sink.sink_ref(), config.sink.table);
 
     let doc = build_vrp(
         &src_fps,
         &snk.fingerprints,
         &policy,
         kafka_boundary,
-        &format!("kafka:{}", config.source.topic),
-        &format!("iceberg:{}.{}", warehouse.root.display(), config.sink.table),
+        &source_ref,
+        &sink_ref,
         &salt,
-        &config.producer,
+        &producer,
         &created_at,
         None,
         signer.as_ref(),

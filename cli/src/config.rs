@@ -3,6 +3,26 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use veridata_core::model::{CanonSpec, DuplicatePolicy, Policy, Tolerances};
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum KmsProvider {
+    #[default]
+    File,
+    Aws,
+    Gcp,
+    Azure,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum StoreKind {
+    #[default]
+    Local,
+    S3,
+    Gcs,
+    Adls,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReconConfig {
     pub producer: String,
@@ -18,6 +38,16 @@ pub struct SourceConfig {
     #[serde(rename = "type")]
     pub kind: String,
     pub topic: String,
+    #[serde(default)]
+    pub bootstrap_servers: Option<String>,
+    #[serde(default)]
+    pub region: Option<String>,
+    #[serde(default)]
+    pub project: Option<String>,
+    #[serde(default)]
+    pub subscription: Option<String>,
+    #[serde(default)]
+    pub connection_string: Option<String>,
     pub boundary: KafkaBoundaryConfig,
 }
 
@@ -37,10 +67,18 @@ pub struct PartitionRange {
 pub struct SinkConfig {
     #[serde(rename = "type")]
     pub kind: String,
-    pub warehouse: PathBuf,
+    #[serde(default)]
+    pub warehouse: Option<PathBuf>,
+    #[serde(default)]
+    pub warehouse_uri: Option<String>,
     pub table: String,
+    #[serde(default)]
+    pub dataset: Option<String>,
+    #[serde(default)]
+    pub catalog: Option<String>,
+    #[serde(default)]
+    pub schema: Option<String>,
     pub boundary: IcebergBoundaryConfig,
-    /// Expected column names for AC-A7 schema drift detection.
     #[serde(default)]
     pub expected_schema: Option<Vec<String>>,
 }
@@ -49,6 +87,8 @@ pub struct SinkConfig {
 pub struct IcebergBoundaryConfig {
     pub snapshot_from: i64,
     pub snapshot_to: i64,
+    #[serde(default)]
+    pub sql_filter: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,14 +113,32 @@ pub struct TolerancesConfig {
 pub struct CryptoConfig {
     pub private_key_file: PathBuf,
     pub public_key_file: PathBuf,
-    /// Optional KMS key id (file-backed provider for AC-C7).
+    #[serde(default)]
+    pub kms_provider: KmsProvider,
     #[serde(default)]
     pub kms_key_id: Option<String>,
+    #[serde(default)]
+    pub aws_region: Option<String>,
+    #[serde(default)]
+    pub azure_vault_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoreConfig {
+    #[serde(default)]
+    pub kind: StoreKind,
+    #[serde(default)]
     pub proofs_dir: PathBuf,
+    #[serde(default)]
+    pub bucket: Option<String>,
+    #[serde(default)]
+    pub prefix: Option<String>,
+    #[serde(default)]
+    pub region: Option<String>,
+    #[serde(default)]
+    pub account: Option<String>,
+    #[serde(default)]
+    pub container: Option<String>,
 }
 
 impl ReconConfig {
@@ -90,6 +148,11 @@ impl ReconConfig {
             source: SourceConfig {
                 kind: "memory_kafka".into(),
                 topic: "orders".into(),
+                bootstrap_servers: None,
+                region: None,
+                project: None,
+                subscription: None,
+                connection_string: None,
                 boundary: KafkaBoundaryConfig {
                     partitions: vec![PartitionRange {
                         id: 0,
@@ -100,11 +163,16 @@ impl ReconConfig {
             },
             sink: SinkConfig {
                 kind: "iceberg".into(),
-                warehouse: PathBuf::from(".veridata/warehouse"),
+                warehouse: Some(PathBuf::from(".veridata/warehouse")),
+                warehouse_uri: None,
                 table: "orders".into(),
+                dataset: None,
+                catalog: None,
+                schema: None,
                 boundary: IcebergBoundaryConfig {
                     snapshot_from: 1,
                     snapshot_to: 1,
+                    sql_filter: None,
                 },
                 expected_schema: None,
             },
@@ -128,10 +196,19 @@ impl ReconConfig {
             crypto: CryptoConfig {
                 private_key_file: PathBuf::from(".veridata/keys/signing.key.b64"),
                 public_key_file: PathBuf::from(".veridata/keys/signing.pub.b64"),
+                kms_provider: KmsProvider::File,
                 kms_key_id: None,
+                aws_region: None,
+                azure_vault_url: None,
             },
             store: StoreConfig {
+                kind: StoreKind::Local,
                 proofs_dir: PathBuf::from(".veridata/proofs"),
+                bucket: None,
+                prefix: None,
+                region: None,
+                account: None,
+                container: None,
             },
         }
     }

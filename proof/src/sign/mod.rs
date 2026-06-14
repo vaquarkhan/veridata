@@ -10,6 +10,14 @@ use super::VrpError;
 pub trait Signer: Send + Sync {
     fn sign(&self, payload: &[u8]) -> Result<Vec<u8>, VrpError>;
     fn public_key_b64(&self) -> String;
+    /// Cloud KMS key id or file key label for audit trails (AC-C7).
+    fn key_id(&self) -> Option<&str> {
+        None
+    }
+    /// `file`, `aws`, `gcp`, or `azure`.
+    fn kms_provider(&self) -> &'static str {
+        "file"
+    }
 }
 
 pub struct KeyPair {

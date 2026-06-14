@@ -1,4 +1,5 @@
 mod config;
+mod connectors;
 mod doctor;
 mod keys;
 mod metrics;
@@ -101,7 +102,7 @@ fn cmd_init(config: &PathBuf, data_dir: &PathBuf, force: bool) -> anyhow::Result
     write_keypair(&data_dir.join("keys"), &pair)?;
 
     let mut cfg = ReconConfig::default_template();
-    cfg.sink.warehouse = data_dir.join("warehouse");
+    cfg.sink.warehouse = Some(data_dir.join("warehouse"));
     cfg.crypto.private_key_file = data_dir.join("keys/signing.key.b64");
     cfg.crypto.public_key_file = data_dir.join("keys/signing.pub.b64");
     cfg.store.proofs_dir = data_dir.join("proofs");
@@ -119,7 +120,7 @@ fn cmd_init(config: &PathBuf, data_dir: &PathBuf, force: bool) -> anyhow::Result
 fn cmd_reconcile(config: &PathBuf, demo: bool) -> anyhow::Result<()> {
     let cfg = ReconConfig::load(config)?;
     let result = run_reconcile(&cfg, demo)?;
-    let store = ProofStore::new(&cfg.store.proofs_dir)?;
+    let store = ProofStore::from_config(&cfg.store)?;
     let path = store.save(&result.doc)?;
     let mut m = metrics::Metrics::default();
     m.record_reconcile();
@@ -139,7 +140,7 @@ fn cmd_verify(
     check: bool,
 ) -> anyhow::Result<()> {
     let cfg = ReconConfig::load(config)?;
-    let store = ProofStore::new(&cfg.store.proofs_dir)?;
+    let store = ProofStore::from_config(&cfg.store)?;
     let selector = proof.unwrap_or("latest");
     let path = store.resolve(selector)?;
     let pub_b64 = match pubkey {
@@ -165,7 +166,7 @@ fn cmd_verify(
 
 fn cmd_report(proof: Option<&str>, config: &PathBuf) -> anyhow::Result<()> {
     let cfg = ReconConfig::load(config)?;
-    let store = ProofStore::new(&cfg.store.proofs_dir)?;
+    let store = ProofStore::from_config(&cfg.store)?;
     let selector = proof.unwrap_or("latest");
     let path = store.resolve(selector)?;
     let doc = store.load(&path)?;

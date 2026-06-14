@@ -33,6 +33,12 @@ All notable changes to veridata. **Author:** Vaquar Khan.
 - PyPI name avoids conflict with unrelated [VeriData](https://pypi.org/project/VeriData/) pandas cleaner
 - GitHub Actions publish workflow (`.github/workflows/pypi.yml`)
 - Product banner in README (`docs/assets/veridata-banner.png`)
-- Dependabot for Cargo, `python/` pip, and GitHub Actions (`.github/dependabot.yml`)
+- Dependabot for Cargo, `python/` pip, and GitHub Actions
+
+### P4 — Cloud (connectors + KMS)
+- `veridata-cloud`: AWS/GCP/Azure KMS signers + S3/GCS/ADLS proof store
+- `veridata-connector-cloud`: MSK, Iceberg-S3, Pub/Sub, BigQuery SQL pushdown, Event Hubs, Databricks Delta
+- CLI connector factory + extended `recon.yaml` (`kms_provider`, `store.kind`, cloud source/sink types)
+- Build: `cargo build -p veridata-cli --features cloud`
 
 [0.1.0]: https://github.com/vaquarkhan/veridata

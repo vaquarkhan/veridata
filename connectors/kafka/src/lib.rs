@@ -9,3 +9,4 @@ mod rdkafka_reader;
 
 pub use connector::{encode_kafka_pos, KafkaSourceConnector};
 pub use memory::MemoryKafkaSource;
+pub use parse::parse_message;

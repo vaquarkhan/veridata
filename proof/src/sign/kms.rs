@@ -37,6 +37,14 @@ impl Signer for FileKmsSigner {
     fn public_key_b64(&self) -> String {
         self.inner.public_key_b64()
     }
+
+    fn key_id(&self) -> Option<&str> {
+        Some(&self.key_id)
+    }
+
+    fn kms_provider(&self) -> &'static str {
+        "file"
+    }
 }
 
 /// Resolve trusted pubkeys by key id for rotation (AC-C7.3).

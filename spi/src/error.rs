@@ -13,6 +13,16 @@ pub enum ConnectorError {
     Kafka(String),
     #[error("iceberg error: {0}")]
     Iceberg(String),
+    #[error("gcp error: {0}")]
+    Gcp(String),
+    #[error("azure error: {0}")]
+    Azure(String),
+    #[error("bigquery error: {0}")]
+    BigQuery(String),
+    #[error("databricks error: {0}")]
+    Databricks(String),
+    #[error("object store error: {0}")]
+    ObjectStore(String),
     #[error("schema drift: {0}")]
     SchemaDrift(String),
     #[error("{0}")]

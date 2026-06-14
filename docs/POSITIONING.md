@@ -19,18 +19,21 @@ Veridata produces a **signed, third-party-verifiable receipt** that, over a defi
 | CLI: init → reconcile → verify → report | Shipped |
 | SPI: pluggable `SourceConnector` / `SinkConnector` | Shipped |
 | Reference path: **memory Kafka → filesystem Iceberg** | Shipped (demo backends) |
+| Cloud path: MSK, Pub/Sub, Event Hubs, Iceberg-S3, BigQuery, Databricks | Shipped (`--features cloud`) |
+| Cloud KMS: AWS, GCP, Azure + file stand-in | Shipped (`veridata-cloud`) |
+| Object-store proof store: S3, GCS, ADLS | Shipped |
 | CI quality gates (Ubuntu): tests, coverage, demo smoke | Shipped |
 
 ## What Veridata is not (do not claim these today)
 
 | Claim sometimes made | Reality on `main` |
 |----------------------|-------------------|
-| “Runs on AWS / GCP / Azure / Databricks production” | **Not yet** — no cloud SDK connectors; see [developer/ROADMAP.md](developer/ROADMAP.md) |
+| “Runs on AWS / GCP / Azure / Databricks production” | **Yes** with `--features cloud` + cloud credentials; demo path remains default |
 | “10M rows mathematically proved out of the box” | **Mechanism scales in principle**; v0.1 is demo-scale; billion-row needs warehouse SQL pushdown + cloud path |
 | “Zero-trust pipeline” (inline gate on every write) | **Philosophy, not product** — you integrate the gate; we ship offline verify + CLI |
 | “Automated remediation, DLQ, idempotent replay” | **Not implemented** — we **detect and prove** faults; replay/DLQ is your orchestrator or a future integration |
 | “Published on crates.io / PyPI / Docker Hub” | **PyPI verifier** (`pip install veridata-vrp`); not `veridata` — [name taken](https://pypi.org/project/VeriData/) by unrelated pandas cleaner; crates.io + Docker not yet |
-| “Real cloud KMS signing” | **File-backed stand-in only** — AWS/GCP/Azure KMS SDKs not wired |
+| “Real cloud KMS signing” | **AWS/GCP/Azure SDK signers** in `veridata-cloud`; file-backed stand-in still default |
 
 ## How architects should describe it
 

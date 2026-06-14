@@ -1,0 +1,39 @@
+[package]
+name = "veridata-connector-cloud"
+description = "P4 cloud connectors for veridata (MSK, S3, Pub/Sub, BigQuery, Azure, Databricks)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = []
+kafka = ["dep:veridata-connector-kafka", "veridata-connector-kafka/rdkafka-backend"]
+gcp = ["dep:reqwest", "dep:jsonwebtoken", "object_store/gcp"]
+azure = ["kafka", "object_store/azure"]
+aws = ["kafka", "object_store/aws"]
+all = ["kafka", "gcp", "azure", "aws"]
+
+[dependencies]
+veridata-core.workspace = true
+veridata-spi.workspace = true
+veridata-connector-iceberg = { path = "../iceberg" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+arrow.workspace = true
+parquet.workspace = true
+object_store = { version = "0.11", default-features = false }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+futures = "0.3"
+bytes = "1"
+base64.workspace = true
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+veridata-connector-kafka = { path = "../kafka", optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+jsonwebtoken = { version = "9", optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+veridata-core = { workspace = true, features = ["test-util"] }

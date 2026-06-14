@@ -10,12 +10,21 @@ authors.workspace = true
 name = "veridata"
 path = "src/main.rs"
 
+[features]
+default = []
+cloud = [
+    "dep:veridata-connector-cloud",
+    "veridata-connector-cloud/all",
+]
+
 [dependencies]
 veridata-core = { path = "../core" }
 veridata-proof = { path = "../proof" }
 veridata-spi = { path = "../spi" }
+veridata-cloud = { path = "../cloud" }
 veridata-connector-kafka = { path = "../connectors/kafka" }
 veridata-connector-iceberg = { path = "../connectors/iceberg" }
+veridata-connector-cloud = { path = "../connectors/cloud", optional = true }
 veridata-e2e = { path = "../e2e" }
 clap.workspace = true
 serde.workspace = true
