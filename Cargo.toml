@@ -21,7 +21,7 @@ authors = ["Vaquar Khan"]
 repository = "https://github.com/vaquarkhan/veridata"
 
 [workspace.dependencies]
-sha2 = "0.10"
+sha2 = "0.11"
 blake3 = "1"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 serde = { version = "1", features = ["derive"] }
