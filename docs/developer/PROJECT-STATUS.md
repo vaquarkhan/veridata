@@ -53,6 +53,7 @@ Full quality gates need `cargo` + linker. **GitHub Actions** (`ubuntu-latest`, `
 | Column projection pushdown | `connectors/iceberg/src/connector.rs` | Filesystem Parquet only |
 | CLI `--check` + metrics | `cli/src/main.rs`, `cli/src/metrics.rs` | AC-E2 / AC-E4 |
 | File KMS stand-in | `proof/src/sign/kms.rs` | Not cloud KMS SDKs |
+| Dependabot | `.github/dependabot.yml` | Weekly Cargo, pip, and Actions dependency PRs |
 | CBOR wire | `proof/src/format/cbor.rs` | Round-trip; sign still JCS JSON |
 
 ---

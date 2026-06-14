@@ -7,6 +7,7 @@ The items below are **outstanding** and require new connectors, SDK integrations
 
 | Item | Status | Notes |
 |------|--------|-------|
+| **Dependabot** | Enabled | Weekly PRs for Cargo, `python/` pip, and GitHub Actions |
 | **crates.io publish** | Not done | `veridata-core`, `veridata-proof`, `veridata-cli` metadata + release workflow |
 | **GitHub binary releases** | Not done | Multi-OS static `veridata` binaries (no Docker required) |
 | **Optional Docker image** | Not done | Secondary channel only |

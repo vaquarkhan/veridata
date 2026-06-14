@@ -33,5 +33,6 @@ All notable changes to veridata. **Author:** Vaquar Khan.
 - PyPI name avoids conflict with unrelated [VeriData](https://pypi.org/project/VeriData/) pandas cleaner
 - GitHub Actions publish workflow (`.github/workflows/pypi.yml`)
 - Product banner in README (`docs/assets/veridata-banner.png`)
+- Dependabot for Cargo, `python/` pip, and GitHub Actions (`.github/dependabot.yml`)
 
 [0.1.0]: https://github.com/vaquarkhan/veridata
