@@ -29,7 +29,7 @@ Veridata produces a **signed, third-party-verifiable receipt** that, over a defi
 | “10M rows mathematically proved out of the box” | **Mechanism scales in principle**; v0.1 is demo-scale; billion-row needs warehouse SQL pushdown + cloud path |
 | “Zero-trust pipeline” (inline gate on every write) | **Philosophy, not product** — you integrate the gate; we ship offline verify + CLI |
 | “Automated remediation, DLQ, idempotent replay” | **Not implemented** — we **detect and prove** faults; replay/DLQ is your orchestrator or a future integration |
-| “Published on crates.io / PyPI / Docker Hub” | **Not yet** — see P4 roadmap |
+| “Published on crates.io / PyPI / Docker Hub” | **PyPI verifier** (`pip install veridata-vrp`); not `veridata` — [name taken](https://pypi.org/project/VeriData/) by unrelated pandas cleaner; crates.io + Docker not yet |
 | “Real cloud KMS signing” | **File-backed stand-in only** — AWS/GCP/Azure KMS SDKs not wired |
 
 ## How architects should describe it

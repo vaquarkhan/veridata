@@ -13,6 +13,8 @@ target/llvm-cov-target/
 __pycache__/
 .venv/
 *.egg-info/
+python/dist/
+python/build/
 .pytest_cache/
 .mypy_cache/
 

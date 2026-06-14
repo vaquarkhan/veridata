@@ -8,7 +8,7 @@
 | [TESTING.md](TESTING.md) | Run tests, CI gates, 100% coverage, Windows linker notes |
 | [COVERAGE-CHECKLIST.md](COVERAGE-CHECKLIST.md) | Per-module 100% coverage checklist |
 | [../connectors/README.md](../connectors/README.md) | Kafka → Iceberg SPI connectors |
-| [../spec/VRP-v0.1.md](../spec/VRP-v0.1.md) | Normative VRP format |
+| [../../python/README.md](../../python/README.md) | PyPI package — `pip install veridata-vrp` offline verifier |
 
 ## Git hooks (no Cursor attribution)
 
@@ -27,6 +27,7 @@ powershell -File scripts/install-git-hooks.ps1   # Windows
 
 ```bash
 # No Rust linker? P0 only:
+pip install -e ./python
 python conformance/validate_p0.py
 
 # Full gates (or use GitHub Actions CI on Ubuntu):

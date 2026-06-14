@@ -65,7 +65,7 @@ See [ROADMAP.md](ROADMAP.md) for detail:
 - Object-store proof stores (S3, GCS, ADLS)
 - Cloud KMS SDKs (vs file-backed stub)
 - Warehouse **SQL** pushdown (BigQuery, Spark)
-- Publishing (crates.io, GitHub Releases, optional PyPI/Docker)
+- Publishing (crates.io, GitHub Releases, optional Docker) — **PyPI `veridata-vrp`** ready in `python/`
 - P5 breadth (multi-hop, transform-aware, transparency log, …)
 
 ---

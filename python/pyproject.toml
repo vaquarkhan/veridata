@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "veridata-vrp"
+version = "0.1.0"
+description = "Offline verifier for Verifiable Reconciliation Proofs (VRP v0.1) by Vaquar Khan"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [{ name = "Vaquar Khan" }]
+keywords = [
+    "reconciliation",
+    "cryptography",
+    "data-engineering",
+    "vrp",
+    "merkle",
+    "ed25519",
+    "verifiable-reconciliation-proof",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "cryptography>=42",
+    "jsonschema>=4.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/vaquarkhan/veridata"
+Documentation = "https://github.com/vaquarkhan/veridata/blob/main/docs/spec/VRP-v0.1.md"
+Repository = "https://github.com/vaquarkhan/veridata"
+Issues = "https://github.com/vaquarkhan/veridata/issues"
+
+[project.scripts]
+veridata-vrp-verify = "veridata_vrp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/veridata_vrp"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/veridata_vrp", "README.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

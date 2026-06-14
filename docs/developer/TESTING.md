@@ -11,8 +11,9 @@ cargo test --workspace
 # Property tests (need test-util feature)
 cargo test -p veridata-core --features test-util --test proptest_recon
 
-# P0 conformance vectors (Python)
-pip install jsonschema cryptography
+# P0 conformance vectors (Python / PyPI package)
+pip install -e "./python[dev]"
+pytest python/tests
 python conformance/validate_p0.py
 
 # E2E Kafka → Iceberg via SPI

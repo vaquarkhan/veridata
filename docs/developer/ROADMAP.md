@@ -10,7 +10,7 @@ The items below are **outstanding** and require new connectors, SDK integrations
 | **crates.io publish** | Not done | `veridata-core`, `veridata-proof`, `veridata-cli` metadata + release workflow |
 | **GitHub binary releases** | Not done | Multi-OS static `veridata` binaries (no Docker required) |
 | **Optional Docker image** | Not done | Secondary channel only |
-| **PyPI / Python bindings** | Not done | Would need PyO3 wheel for data-engineer adoption |
+| **PyPI (`veridata-vrp`)** | Package ready | VRP offline verifier; name avoids conflict with [VeriData](https://pypi.org/project/VeriData/) pandas package |
 
 ## Cloud connectors (design only today)
 

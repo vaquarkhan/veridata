@@ -27,4 +27,11 @@ All notable changes to veridata. **Author:** Vaquar Khan.
 - Demo and benchmark scripts
 - Developer testing guide + 100% coverage gate (CI)
 
+### P4 — Python (PyPI)
+- `veridata-vrp` package: offline VRP v0.1 verifier (`pip install veridata-vrp`)
+- `veridata-vrp-verify` CLI + `veridata_vrp` library API
+- PyPI name avoids conflict with unrelated [VeriData](https://pypi.org/project/VeriData/) pandas cleaner
+- GitHub Actions publish workflow (`.github/workflows/pypi.yml`)
+- Product banner in README (`docs/assets/veridata-banner.png`)
+
 [0.1.0]: https://github.com/vaquarkhan/veridata

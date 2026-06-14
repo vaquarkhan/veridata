@@ -20,9 +20,10 @@ jobs:
           cargo test --workspace
           cargo test -p veridata-core --features test-util --test proptest_recon
 
-      - name: P0 conformance (Python reference)
+      - name: Python package (PyPI source)
         run: |
-          pip install jsonschema cryptography
+          python -m pip install -e "./python[dev]"
+          python -m pytest python/tests
           python conformance/validate_p0.py
 
       - name: Determinism gate

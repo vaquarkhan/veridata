@@ -1,4 +1,12 @@
+<p align="center">
+  <img src="docs/assets/veridata-banner.png" alt="Veridata — Verifiable Reconciliation Proofs" width="720">
+</p>
+
 # veridata
+
+[![PyPI](https://img.shields.io/pypi/v/veridata-vrp.svg)](https://pypi.org/project/veridata-vrp/)
+[![CI](https://github.com/vaquarkhan/veridata/actions/workflows/ci.yml/badge.svg)](https://github.com/vaquarkhan/veridata/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 **Author:** [Vaquar Khan](https://github.com/vaquarkhan)
 
@@ -16,7 +24,7 @@
 | **P1** | Deterministic core + offline verifier | Complete |
 | **P2** | Kafka → Iceberg via SPI + E2E (demo backends) | Complete |
 | **P3** | CLI, metrics, `--check`, demo | Complete |
-| **P4** | Publishing + cloud connectors | Not started — [roadmap](docs/developer/ROADMAP.md) |
+| **P4** | Publishing + cloud connectors | In progress — [PyPI verifier](python/README.md); cloud connectors not started |
 | **P5** | Connector breadth + advanced features | Not started — [roadmap](docs/developer/ROADMAP.md) |
 
 ## Quick links
@@ -28,7 +36,7 @@
 - [Coverage checklist](docs/developer/COVERAGE-CHECKLIST.md) — per-module 100% line targets
 - [VRP v0.1 specification](docs/spec/VRP-v0.1.md) — normative proof format and verify algorithm
 - [Conformance vectors](conformance/) — canonical test proofs with expected outcomes
-- [Benchmarks](BENCHMARKS.md)
+- [Python package (PyPI)](python/README.md) — `pip install veridata-vrp` offline verifier
 - [Contributing](CONTRIBUTING.md)
 
 ## What a VRP proves
@@ -48,6 +56,26 @@ Proofs contain **only salted hashes** — never raw field values or identities.
 - Automated **remediation**, **DLQ routing**, or **idempotent replay** (detect + prove only)
 - Production **cloud** connectors (MSK, S3, BigQuery, Databricks, etc.)
 - Inline “zero-trust” gate in your pipeline — you call reconcile/verify; we provide the proof and verifier
+
+## Quick start (Python — PyPI)
+
+> **Note:** PyPI name is `veridata-vrp`, not `veridata`. The name [`veridata` on PyPI](https://pypi.org/project/VeriData/) is an unrelated pandas data-cleaning library.
+
+```bash
+pip install veridata-vrp
+veridata-vrp-verify conformance/valid.vrp.json --pubkey conformance/test-key.pub.b64
+```
+
+```python
+import json
+from veridata_vrp import verify_vrp
+
+vrp = json.load(open("proof.vrp.json", encoding="utf-8"))
+result = verify_vrp(vrp, pubkey_b64="...")
+print(result.outcome)  # PASS | FAIL | UNVERIFIED
+```
+
+See [python/README.md](python/README.md) for development and publishing.
 
 ## Quick start (CLI)
 
