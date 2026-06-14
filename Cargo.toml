@@ -36,7 +36,7 @@ veridata-core = { path = "core" }
 veridata-proof = { path = "proof" }
 veridata-spi = { path = "spi" }
 rdkafka = { version = "0.37", features = ["cmake-build"] }
-arrow = { version = "54", default-features = false, features = ["json"] }
+arrow = { version = "59", default-features = false, features = ["json"] }
 parquet = { version = "54", default-features = false, features = ["arrow"] }
 testcontainers = "0.23"
 testcontainers-modules = { version = "0.11", features = ["kafka"] }
